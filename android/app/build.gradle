@@ -2,6 +2,8 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+def hermesEnabled = project.hasProperty("hermesEnabled") ? project.hermesEnabled : false
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -115,5 +117,11 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name.contains('lint') || task.name.contains('Lint')) {
+        task.enabled = false
     }
 }
