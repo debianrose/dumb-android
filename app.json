@@ -1,4 +1,9 @@
 {
-  "name": "dumbclient",
-  "displayName": "dumbclient"
+  "expo": {
+    "name": "dumb-android",
+    "slug": "dumb-android",
+    "version": "1.0.0",
+    "jsEngine": "jsc",
+    "sdkVersion": "53.0.0"
+  }
 }
