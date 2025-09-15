@@ -1,9 +1,0 @@
-{
-  "expo": {
-    "name": "dumbclient",
-    "slug": "dumbclient",
-    "version": "1.0.0",
-    "jsEngine": "jsc",
-    "sdkVersion": "53.0.0"
-  }
-}
