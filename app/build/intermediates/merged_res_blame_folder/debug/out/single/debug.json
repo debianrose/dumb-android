@@ -1,78 +1,82 @@
 [
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-mdpi_ic_launcher.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-mdpi/ic_launcher.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-mdpi/ic_launcher_round.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-xhdpi_ic_launcher_foreground.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-xhdpi/ic_launcher_foreground.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-hdpi/ic_launcher.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-mdpi_ic_launcher_round.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-mdpi/ic_launcher_round.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/layout_activity_chat.xml.flat",
+        "source": "org.debianrose.dumb.app-main-37:/layout/activity_chat.xml"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-xhdpi_ic_launcher.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-xhdpi/ic_launcher.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-hdpi/ic_launcher_round.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-xxhdpi_ic_launcher.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-xxhdpi/ic_launcher.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-xxxhdpi_ic_launcher_foreground.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-xxxhdpi/ic_launcher_foreground.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-ldpi_ic_launcher.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-ldpi/ic_launcher.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-mdpi_ic_launcher_foreground.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-mdpi/ic_launcher_foreground.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-xxxhdpi_ic_launcher_foreground.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-xxxhdpi/ic_launcher_foreground.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-xxhdpi/ic_launcher_round.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-anydpi-v26/ic_launcher.xml"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-xxhdpi_ic_launcher_foreground.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-xxhdpi/ic_launcher_foreground.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-hdpi_ic_launcher.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-hdpi/ic_launcher.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/layout_activity_main.xml.flat",
+        "source": "org.debianrose.dumb.app-main-37:/layout/activity_main.xml"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-mdpi_ic_launcher_foreground.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-mdpi/ic_launcher_foreground.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-xhdpi/ic_launcher.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-xxxhdpi_ic_launcher.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-xxxhdpi/ic_launcher.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-xhdpi_ic_launcher_foreground.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-xhdpi/ic_launcher_foreground.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-hdpi_ic_launcher_round.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-hdpi/ic_launcher_round.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-hdpi_ic_launcher_foreground.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-hdpi/ic_launcher_foreground.png"
     },
     {
-        "merged": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-merged_res-31:/layout_activity_main.xml.flat",
-        "source": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-main-33:/layout/activity_main.xml"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-xxxhdpi/ic_launcher.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-hdpi_ic_launcher_foreground.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-hdpi/ic_launcher_foreground.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-xxhdpi_ic_launcher_foreground.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-xxhdpi/ic_launcher_foreground.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-ldpi_ic_launcher.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-ldpi/ic_launcher.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-xhdpi_ic_launcher_round.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-xhdpi/ic_launcher_round.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-xhdpi/ic_launcher_round.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-xxxhdpi_ic_launcher_round.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-xxxhdpi/ic_launcher_round.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-mdpi/ic_launcher.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-anydpi-v26/ic_launcher_round.xml"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-xxxhdpi/ic_launcher_round.png"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-31:/mipmap-xxhdpi_ic_launcher_round.png.flat",
-        "source": "org.debianrose.dumb.app-main-33:/mipmap-xxhdpi/ic_launcher_round.png"
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "org.debianrose.dumb.app-merged_res-35:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "org.debianrose.dumb.app-main-37:/mipmap-anydpi-v26/ic_launcher.xml"
     }
 ]

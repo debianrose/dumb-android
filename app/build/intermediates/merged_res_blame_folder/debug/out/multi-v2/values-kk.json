@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "org.debianrose.dumb.app-mergeDebugResources-29:/values-kk/values-kk.xml",
+            "outputFile": "org.debianrose.dumb.app-mergeDebugResources-33:/values-kk/values-kk.xml",
             "map": [
                 {
                     "source": "/data/data/com.termux/files/home/.gradle/caches/transforms-3/afc04b595a8fcdaeabdee65f98767aee/transformed/appcompat-1.6.1/res/values-kk/values-kk.xml",

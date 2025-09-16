@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "org.debianrose.dumb.app-mergeDebugResources-29:/values-v23/values-v23.xml",
+            "outputFile": "org.debianrose.dumb.app-mergeDebugResources-33:/values-v23/values-v23.xml",
             "map": [
                 {
                     "source": "/data/data/com.termux/files/home/.gradle/caches/transforms-3/7f3d7a69b6cf9816e3bbe1cb5f0eafd8/transformed/cardview-1.0.0/res/values-v23/values-v23.xml",

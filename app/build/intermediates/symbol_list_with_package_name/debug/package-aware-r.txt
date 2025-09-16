@@ -3136,6 +3136,8 @@ id bounce
 id bounceBoth
 id bounceEnd
 id bounceStart
+id btn_login
+id btn_register
 id buttonPanel
 id cache_measures
 id callMeasure
@@ -3216,6 +3218,8 @@ id end
 id endToStart
 id enterAlways
 id enterAlwaysCollapsed
+id et_password
+id et_username
 id exitUntilCollapsed
 id expand_activities_button
 id expanded_menu
@@ -3262,6 +3266,7 @@ id indeterminate
 id info
 id invisible
 id inward
+id is_pooling_container_tag
 id italic
 id item_touch_helper_previous_elevation
 id jumpToEnd
@@ -3303,6 +3308,8 @@ id material_timepicker_view
 id material_value_index
 id matrix
 id message
+id message_input
+id messages_view
 id middle
 id mini
 id month_grid
@@ -3386,6 +3393,7 @@ id pathRelative
 id peekHeight
 id percent
 id pin
+id pooling_container_listener_holder_tag
 id position
 id postLayout
 id pressed
@@ -3425,6 +3433,7 @@ id search_voice_btn
 id select_dialog_listview
 id selected
 id selection_type
+id send_button
 id sharedValueSet
 id sharedValueUnset
 id shortcut
@@ -3646,6 +3655,7 @@ layout abc_search_dropdown_item_icons_2line
 layout abc_search_view
 layout abc_select_dialog_material
 layout abc_tooltip
+layout activity_chat
 layout activity_main
 layout custom_dialog
 layout design_bottom_navigation_item

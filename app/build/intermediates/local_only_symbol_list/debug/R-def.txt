@@ -1,6 +1,14 @@
 R_DEF: Internal format may change without notice
 local
 color ic_launcher_background
+id btn_login
+id btn_register
+id et_password
+id et_username
+id message_input
+id messages_view
+id send_button
+layout activity_chat
 layout activity_main
 mipmap ic_launcher
 mipmap ic_launcher_foreground
