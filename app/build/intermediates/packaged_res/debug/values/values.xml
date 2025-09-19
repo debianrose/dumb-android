@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="accent">#FF03DAC5</color>
+    <color name="background">#FFF5F5F5</color>
     <color name="ic_launcher_background">#403d40</color>
+    <color name="primary">#FF6200EE</color>
+    <color name="primary_dark">#FF3700B3</color>
     <string name="app_name">DUMB Android</string>
 </resources>

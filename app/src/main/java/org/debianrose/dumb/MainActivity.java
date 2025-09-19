@@ -523,7 +523,6 @@ public class MainActivity extends AppCompatActivity {
         try {
             URI uri = new URI(WS_URL);
             webSocketClient = new WebSocketClient(uri) {
-                @Override
                 public Map<String, String> getHttpHeaders() {
                     Map<String, String> headers = new HashMap<>();
                     if (currentToken != null) {
