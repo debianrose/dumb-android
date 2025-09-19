@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:background="@android:color/white">
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etUsername"
@@ -43,14 +43,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:background="@android:color/white">
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Password"
-                android:inputType="textPassword"
+            android:inputType="textPassword"
                 android:maxLines="1"/>
 
         </com.google.android.material.textfield.TextInputLayout>
@@ -99,8 +99,8 @@
             android:background="@color/primary"
             app:title="Chat App"
             app:titleTextColor="@android:color/white"
-            app:navigationIcon="@drawable/ic_menu"
-            app:menu="@menu/main_menu"/>
+            app:navigationIcon="@drawable/ic_menu"/>
+            <!-- Убрал app:menu пока не создадите main_menu.xml -->
 
         <!-- User Info and Channel Management -->
         <LinearLayout
