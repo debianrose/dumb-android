@@ -1,296 +1,134 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/background">
+    android:orientation="vertical">
 
-    <!-- Login Layout -->
     <LinearLayout
         android:id="@+id/loginLayout"
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <EditText
+            android:id="@+id/etUsername"
+            android:hint="Username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/etPassword"
+            android:hint="Password"
+            android:inputType="textPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btnLogin"
+            android:text="Login"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btnRegister"
+            android:text="Register"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/chatLayout"
+        android:visibility="gone"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:gravity="center"
-        android:padding="24dp"
-        android:visibility="visible">
-
-        <ImageView
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@drawable/ic_chat"
-            android:layout_marginBottom="32dp"
-            android:tint="@color/primary"/>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:background="@android:color/white">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etUsername"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Username"
-                android:inputType="text"
-                android:maxLines="1"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:background="@android:color/white">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPassword"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Password"
-                android:inputType="textPassword"
-                android:maxLines="1"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
+        android:padding="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center_vertical">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLogin"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="Login"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                app:strokeColor="@color/primary"
-                app:strokeWidth="1dp"/>
+            <ImageView
+                android:id="@+id/ivAvatar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@mipmap/ic_launcher"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnRegister"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/tvUsername"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:text="Register"
-                style="@style/Widget.MaterialComponents.Button"/>
-
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Chat Layout -->
-    <LinearLayout
-        android:id="@+id/chatLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <!-- App Bar -->
-        <com.google.android.material.appbar.MaterialToolbar
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/primary"
-            app:title="Chat App"
-            app:titleTextColor="@android:color/white"
-            app:navigationIcon="@drawable/ic_menu"
-            app:menu="@menu/main_menu"/>
-
-        <!-- User Info and Channel Management -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:background="?attr/colorSurface">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <ImageView
-                    android:id="@+id/ivAvatar"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_person"
-                    android:background="@drawable/circle_bg"
-                    android:padding="4dp"/>
-
-                <TextView
-                    android:id="@+id/tvUsername"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginStart="12dp"
-                    android:textColor="?attr/colorOnSurface"/>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="2"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etChannel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Channel name"
-                        android:maxLines="1"/>
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnJoinChannel"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="Join"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    app:icon="@drawable/ic_join"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCreateChannel"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="Create"
-                    app:icon="@drawable/ic_add"/>
-
-            </LinearLayout>
+                android:text="User"
+                android:textSize="18sp"/>
         </LinearLayout>
 
-        <!-- Main Chat Area -->
+        <ListView
+            android:id="@+id/lvChannels"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:dividerHeight="1dp"/>
+
+        <EditText
+            android:id="@+id/etChannel"
+            android:hint="Channel name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
         <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/btnJoinChannel"
+                android:text="Join"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/btnCreateChannel"
+                android:text="Create"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <ListView
+            android:id="@+id/lvMessages"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:orientation="horizontal">
+            android:dividerHeight="2dp"/>
 
-            <!-- Channels List -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="160dp"
-                android:layout_height="match_parent"
-                android:layout_margin="8dp"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="8dp">
+        <EditText
+            android:id="@+id/etMessage"
+            android:hint="Type a message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Channels"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:padding="16dp"
-                        android:background="?attr/colorPrimary"
-                        android:textColor="@android:color/white"/>
-
-                    <ListView
-                        android:id="@+id/lvChannels"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"
-                        android:divider="@null"
-                        android:dividerHeight="0dp"/>
-
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Messages Area -->
-            <androidx.cardview.widget.CardView
+            <Button
+                android:id="@+id/btnSend"
+                android:text="Send"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_margin="8dp"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="8dp">
+                android:layout_height="wrap_content"/>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <!-- Messages List -->
-                    <ListView
-                        android:id="@+id/lvMessages"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"
-                        android:divider="@null"
-                        android:dividerHeight="8dp"
-                        android:padding="8dp"/>
-
-                    <!-- Message Input -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:background="?attr/colorSurfaceVariant">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/etMessage"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="Type message..."
-                                android:maxLines="3"
-                                android:inputType="textMultiLine"/>
-
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRecordVoice"
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            android:layout_marginStart="8dp"
-                            style="@style/Widget.MaterialComponents.Button.Icon"
-                            app:icon="@drawable/ic_mic"
-                            app:iconTint="@android:color/white"/>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnSend"
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            android:layout_marginStart="8dp"
-                            style="@style/Widget.MaterialComponents.Button.Icon"
-                            app:icon="@drawable/ic_send"
-                            app:iconTint="@android:color/white"/>
-
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            <Button
+                android:id="@+id/btnRecordVoice"
+                android:text="Record Voice"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

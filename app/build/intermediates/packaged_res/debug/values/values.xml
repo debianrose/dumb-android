@@ -1,9 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="accent">#FF03DAC5</color>
-    <color name="background">#FFF5F5F5</color>
+    <color name="accent">#4A07B7</color>
+    <color name="colorAccent">#4A07B7</color>
+    <color name="colorBackground">#0D0D0D</color>
+    <color name="colorHint">#AAAAAA</color>
+    <color name="colorText">#FFFFFF</color>
     <color name="ic_launcher_background">#403d40</color>
-    <color name="primary">#FF6200EE</color>
-    <color name="primary_dark">#FF3700B3</color>
+    <color name="primary">#4A07B7</color>
+    <color name="primary_dark">#2E046D</color>
     <string name="app_name">DUMB Android</string>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/colorBackground</item>
+        <item name="android:colorBackground">@color/colorBackground</item>
+        <item name="android:textColor">@color/colorText</item>
+        <item name="android:editTextColor">@color/colorText</item>
+        <item name="android:textColorHint">@color/colorHint</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:buttonStyle">@style/CustomButton</item>
+        <item name="android:editTextStyle">@style/CustomEditText</item>
+    </style>
+    <style name="Base.Theme.Dumb" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        
+        
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        
+        
+        <item name="android:statusBarColor">?attr/colorPrimaryDark</item>
+        
+        
+        <item name="android:navigationBarColor">@android:color/black</item>
+        
+        
+    </style>
+    <style name="CustomButton" parent="Widget.AppCompat.Button">
+        <item name="android:backgroundTint">@color/colorAccent</item>
+        <item name="android:textColor">@color/colorText</item>
+    </style>
+    <style name="CustomEditText" parent="Widget.AppCompat.EditText">
+        <item name="android:backgroundTint">@color/colorAccent</item>
+        <item name="android:textColor">@color/colorText</item>
+        <item name="android:textColorHint">@color/colorHint</item>
+    </style>
+    <style name="Theme.Dumb" parent="Base.Theme.Dumb"/>
 </resources>

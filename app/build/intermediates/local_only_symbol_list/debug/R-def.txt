@@ -1,11 +1,15 @@
 R_DEF: Internal format may change without notice
 local
 color accent
-color background
+color colorAccent
+color colorBackground
+color colorHint
+color colorText
 color ic_launcher_background
 color primary
 color primary_dark
 drawable circle_bg
+drawable edittext_background
 drawable ic_add
 drawable ic_chat
 drawable ic_join
@@ -41,4 +45,9 @@ mipmap ic_launcher
 mipmap ic_launcher_foreground
 mipmap ic_launcher_round
 string app_name
+style AppTheme
+style Base.Theme.Dumb
+style CustomButton
+style CustomEditText
+style Theme.Dumb
 xml network_security_config

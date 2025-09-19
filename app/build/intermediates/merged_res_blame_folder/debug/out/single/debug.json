@@ -8,6 +8,10 @@
         "source": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-main-37:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
     {
+        "merged": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-merged_res-35:/drawable_edittext_background.xml.flat",
+        "source": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-main-37:/drawable/edittext_background.xml"
+    },
+    {
         "merged": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-merged_res-35:/mipmap-hdpi_ic_launcher.png.flat",
         "source": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-main-37:/mipmap-hdpi/ic_launcher.png"
     },
@@ -22,6 +26,10 @@
     {
         "merged": "org.debianrose.dumb.app-merged_res-35:/layout_activity_main.xml.flat",
         "source": "org.debianrose.dumb.app-main-37:/layout/activity_main.xml"
+    },
+    {
+        "merged": "org.debianrose.dumb.app-merged_res-35:/layout_message_item.xml.flat",
+        "source": "org.debianrose.dumb.app-main-37:/layout/message_item.xml"
     },
     {
         "merged": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-merged_res-35:/drawable_ic_join.xml.flat",

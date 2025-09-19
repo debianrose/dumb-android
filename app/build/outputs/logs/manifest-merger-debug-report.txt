@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-30:12
-INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-30:12
-INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-30:12
-INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-30:12
+ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-27:12
+INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-27:12
+INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-27:12
+INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-27:12
 MERGED from [androidx.databinding:viewbinding:8.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/ea79be06a1dac1beae5423676097fe7b/transformed/viewbinding-8.2.0/AndroidManifest.xml:2:1-7:12
 MERGED from [com.google.android.material:material:1.10.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/807c5ab23075feabe6285b45396af5e4/transformed/material-1.10.0/AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /data/data/com.termux/files/home/.gradle/caches/transforms-3/d5727db3577b6baffc19ae11d71f59db/transformed/constraintlayout-2.1.4/AndroidManifest.xml:2:1-11:12
@@ -60,24 +60,24 @@ MERGED from [androidx.annotation:annotation-experimental:1.3.0] /data/data/com.t
 	xmlns:android
 		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:11-69
 uses-permission#android.permission.INTERNET
-ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:5:5-67
+ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:5:5-66
 	android:name
 		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:5:22-64
 uses-permission#android.permission.RECORD_AUDIO
-ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:6:5-71
+ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:6:5-70
 	android:name
 		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:6:22-68
 uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
-ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:7:5-81
+ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:7:5-80
 	android:name
 		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:7:22-78
 uses-permission#android.permission.READ_EXTERNAL_STORAGE
-ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:8:5-80
+ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:8:5-79
 	android:name
 		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:8:22-77
 application
-ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:10:5-28:19
-INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:10:5-28:19
+ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:10:5-26:19
+INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:10:5-26:19
 MERGED from [com.google.android.material:material:1.10.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/807c5ab23075feabe6285b45396af5e4/transformed/material-1.10.0/AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.10.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/807c5ab23075feabe6285b45396af5e4/transformed/material-1.10.0/AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /data/data/com.termux/files/home/.gradle/caches/transforms-3/d5727db3577b6baffc19ae11d71f59db/transformed/constraintlayout-2.1.4/AndroidManifest.xml:9:5-20
@@ -98,14 +98,14 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] /data/data/com.termux/files
 		INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.9.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/73aa289b8223c212c06ec07fc6bada22/transformed/core-1.9.0/AndroidManifest.xml:28:18-86
+	android:supportsRtl
+		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:13:9-35
 	android:label
-		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:12:9-39
+		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:12:9-41
 	android:allowBackup
 		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:11:9-35
 	android:theme
-		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:13:9-53
-	android:networkSecurityConfig
-		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:15:9-69
+		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:15:9-40
 	android:usesCleartextTraffic
 		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:14:9-44
 activity#org.debianrose.dumb.MainActivity
@@ -117,17 +117,13 @@ ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/And
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
 ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:20:13-23:29
 action#android.intent.action.MAIN
-ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:21:17-69
+ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:21:17-68
 	android:name
 		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:21:25-66
 category#android.intent.category.LAUNCHER
-ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:22:17-77
+ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:22:17-76
 	android:name
 		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:22:27-74
-activity#org.debianrose.dumb.ChatActivity
-ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:26:9-50
-	android:name
-		ADDED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:26:19-47
 uses-sdk
 INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml
