@@ -3153,12 +3153,15 @@ id bounceBoth
 id bounceEnd
 id bounceStart
 id btnCreateChannel
+id btnEndCall
 id btnJoinChannel
 id btnLogin
 id btnRecordVoice
 id btnRegister
 id btnSend
 id btnSubmit
+id btnToggleAudio
+id btnToggleVideo
 id buttonPanel
 id cache_measures
 id callMeasure
@@ -3305,6 +3308,7 @@ id line3
 id linear
 id listMode
 id list_item
+id localVideoView
 id lvChannels
 id lvMessages
 id m3_side_sheet
@@ -3428,6 +3432,7 @@ id progress_horizontal
 id radio
 id ratio
 id rectangles
+id remoteVideoView
 id report_drawn
 id reverseSawtooth
 id right
@@ -3543,6 +3548,7 @@ id transition_position
 id transition_scene_layoutid_cache
 id transition_transform
 id triangle
+id tvCallStatus
 id tvMessage
 id tvSender
 id tvTime
@@ -3686,6 +3692,7 @@ layout abc_tooltip
 layout activity_auth
 layout activity_channel_selection
 layout activity_chat
+layout activity_voice_call
 layout custom_dialog
 layout design_bottom_navigation_item
 layout design_bottom_sheet_dialog

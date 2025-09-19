@@ -5,6 +5,7 @@ INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/
 INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-38:12
 INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:2:1-38:12
 MERGED from [androidx.databinding:viewbinding:8.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/ea79be06a1dac1beae5423676097fe7b/transformed/viewbinding-8.2.0/AndroidManifest.xml:2:1-7:12
+MERGED from [com.dafruits:webrtc:123.0.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/66702104ff194f7cbb5ff08056a85b86/transformed/webrtc-123.0.0/AndroidManifest.xml:11:1-14:12
 MERGED from [com.google.android.material:material:1.10.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/807c5ab23075feabe6285b45396af5e4/transformed/material-1.10.0/AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /data/data/com.termux/files/home/.gradle/caches/transforms-3/d5727db3577b6baffc19ae11d71f59db/transformed/constraintlayout-2.1.4/AndroidManifest.xml:2:1-11:12
 MERGED from [androidx.appcompat:appcompat-resources:1.6.1] /data/data/com.termux/files/home/.gradle/caches/transforms-3/7e4c3b45b7c9677c9cab732217087068/transformed/appcompat-resources-1.6.1/AndroidManifest.xml:17:1-22:12
@@ -149,6 +150,8 @@ INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/
 INJECTED from /data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml
 MERGED from [androidx.databinding:viewbinding:8.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/ea79be06a1dac1beae5423676097fe7b/transformed/viewbinding-8.2.0/AndroidManifest.xml:5:5-44
 MERGED from [androidx.databinding:viewbinding:8.2.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/ea79be06a1dac1beae5423676097fe7b/transformed/viewbinding-8.2.0/AndroidManifest.xml:5:5-44
+MERGED from [com.dafruits:webrtc:123.0.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/66702104ff194f7cbb5ff08056a85b86/transformed/webrtc-123.0.0/AndroidManifest.xml:13:3-72
+MERGED from [com.dafruits:webrtc:123.0.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/66702104ff194f7cbb5ff08056a85b86/transformed/webrtc-123.0.0/AndroidManifest.xml:13:3-72
 MERGED from [com.google.android.material:material:1.10.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/807c5ab23075feabe6285b45396af5e4/transformed/material-1.10.0/AndroidManifest.xml:20:5-44
 MERGED from [com.google.android.material:material:1.10.0] /data/data/com.termux/files/home/.gradle/caches/transforms-3/807c5ab23075feabe6285b45396af5e4/transformed/material-1.10.0/AndroidManifest.xml:20:5-44
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /data/data/com.termux/files/home/.gradle/caches/transforms-3/d5727db3577b6baffc19ae11d71f59db/transformed/constraintlayout-2.1.4/AndroidManifest.xml:5:5-7:41

@@ -6,7 +6,7 @@
 6
 7    <uses-sdk
 8        android:minSdkVersion="21"
-9        android:targetSdkVersion="35" />
+9        android:targetSdkVersion="34" />
 10
 11    <uses-permission android:name="android.permission.INTERNET" />
 11-->/data/data/com.termux/files/home/potato/dumb-android/app/src/main/AndroidManifest.xml:5:5-67
