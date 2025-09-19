@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <permission
         android:name="org.debianrose.dumb.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
@@ -24,12 +25,12 @@
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:debuggable="true"
         android:extractNativeLibs="true"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true" >
         <activity
-            android:name="org.debianrose.dumb.MainActivity"
+            android:name="org.debianrose.dumb.AuthActivity"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -37,6 +38,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="org.debianrose.dumb.ChannelSelectionActivity"
+            android:exported="false" />
+        <activity
+            android:name="org.debianrose.dumb.ChatActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.startup.InitializationProvider"

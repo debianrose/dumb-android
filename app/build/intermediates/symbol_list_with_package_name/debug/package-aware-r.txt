@@ -3158,6 +3158,7 @@ id btnLogin
 id btnRecordVoice
 id btnRegister
 id btnSend
+id btnSubmit
 id buttonPanel
 id cache_measures
 id callMeasure
@@ -3171,7 +3172,6 @@ id center_vertical
 id chain
 id chain2
 id chains
-id chatLayout
 id checkbox
 id checked
 id chronometer
@@ -3242,6 +3242,7 @@ id enterAlwaysCollapsed
 id etChannel
 id etMessage
 id etPassword
+id etToken
 id etUsername
 id exitUntilCollapsed
 id expand_activities_button
@@ -3292,7 +3293,6 @@ id inward
 id is_pooling_container_tag
 id italic
 id item_touch_helper_previous_elevation
-id ivAvatar
 id jumpToEnd
 id jumpToStart
 id labeled
@@ -3305,7 +3305,6 @@ id line3
 id linear
 id listMode
 id list_item
-id loginLayout
 id lvChannels
 id lvMessages
 id m3_side_sheet
@@ -3547,7 +3546,6 @@ id triangle
 id tvMessage
 id tvSender
 id tvTime
-id tvUsername
 id unchecked
 id uniform
 id unlabeled
@@ -3685,7 +3683,9 @@ layout abc_search_dropdown_item_icons_2line
 layout abc_search_view
 layout abc_select_dialog_material
 layout abc_tooltip
-layout activity_main
+layout activity_auth
+layout activity_channel_selection
+layout activity_chat
 layout custom_dialog
 layout design_bottom_navigation_item
 layout design_bottom_sheet_dialog
@@ -3702,6 +3702,7 @@ layout design_navigation_menu
 layout design_navigation_menu_item
 layout design_text_input_end_icon
 layout design_text_input_start_icon
+layout dialog_2fa
 layout m3_alert_dialog
 layout m3_alert_dialog_actions
 layout m3_alert_dialog_title
