@@ -2,27 +2,34 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/colorBackground">
 
+    <!-- Login layout сверху -->
     <LinearLayout
         android:id="@+id/loginLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="@color/colorBackground">
 
         <EditText
             android:id="@+id/etUsername"
             android:hint="Username"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorText"
+            android:textColorHint="@color/colorHint"/>
 
         <EditText
             android:id="@+id/etPassword"
             android:hint="Password"
             android:inputType="textPassword"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorText"
+            android:textColorHint="@color/colorHint"/>
 
         <Button
             android:id="@+id/btnLogin"
@@ -37,11 +44,13 @@
             android:layout_height="wrap_content"/>
     </LinearLayout>
 
+    <!-- Чат -->
     <LinearLayout
         android:id="@+id/chatLayout"
         android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical"
         android:padding="8dp">
 
@@ -63,6 +72,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="User"
+                android:textColor="@color/colorText"
                 android:textSize="18sp"/>
         </LinearLayout>
 
@@ -70,13 +80,17 @@
             android:id="@+id/lvChannels"
             android:layout_width="match_parent"
             android:layout_height="100dp"
-            android:dividerHeight="1dp"/>
+            android:dividerHeight="1dp"
+            android:background="@color/colorBackground"
+            android:textColor="@color/colorText"/>
 
         <EditText
             android:id="@+id/etChannel"
             android:hint="Channel name"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorText"
+            android:textColorHint="@color/colorHint"/>
 
         <LinearLayout
             android:orientation="horizontal"
@@ -98,23 +112,29 @@
                 android:layout_height="wrap_content"/>
         </LinearLayout>
 
+        <!-- Messages list занимает всё пространство -->
         <ListView
             android:id="@+id/lvMessages"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:dividerHeight="2dp"/>
+            android:dividerHeight="2dp"
+            android:background="@color/colorBackground"/>
 
-        <EditText
-            android:id="@+id/etMessage"
-            android:hint="Type a message"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
+        <!-- Нижняя панель -->
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+
+            <EditText
+                android:id="@+id/etMessage"
+                android:hint="Type a message"
+                android:layout_width="0dp"
+                android:layout_weight="2"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorText"
+                android:textColorHint="@color/colorHint"/>
 
             <Button
                 android:id="@+id/btnSend"
@@ -125,9 +145,8 @@
 
             <Button
                 android:id="@+id/btnRecordVoice"
-                android:text="Record Voice"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+                android:text="🎤"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
     </LinearLayout>

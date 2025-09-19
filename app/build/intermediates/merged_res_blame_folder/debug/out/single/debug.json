@@ -28,10 +28,6 @@
         "source": "org.debianrose.dumb.app-main-37:/layout/activity_main.xml"
     },
     {
-        "merged": "org.debianrose.dumb.app-merged_res-35:/layout_message_item.xml.flat",
-        "source": "org.debianrose.dumb.app-main-37:/layout/message_item.xml"
-    },
-    {
         "merged": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-merged_res-35:/drawable_ic_join.xml.flat",
         "source": "/data/data/com.termux/files/home/.gradle/daemon/8.5/org.debianrose.dumb.app-main-37:/drawable/ic_join.xml"
     },
