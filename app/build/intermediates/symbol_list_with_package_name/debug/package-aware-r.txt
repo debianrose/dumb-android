@@ -2976,6 +2976,7 @@ drawable ic_mtrl_checked_circle
 drawable ic_mtrl_chip_checked_black
 drawable ic_mtrl_chip_checked_circle
 drawable ic_mtrl_chip_close_circle
+drawable ic_pause
 drawable ic_person
 drawable ic_search_black_24
 drawable ic_send
@@ -3054,6 +3055,7 @@ drawable notify_panel_notification_icon_bg
 drawable test_level_drawable
 drawable tooltip_frame_dark
 drawable tooltip_frame_light
+drawable voice_progress
 id ALT
 id BOTTOM_END
 id BOTTOM_START
@@ -3152,16 +3154,18 @@ id bounce
 id bounceBoth
 id bounceEnd
 id bounceStart
+id btnAnswer
 id btnCreateChannel
 id btnEndCall
 id btnJoinChannel
 id btnLogin
+id btnPlayVoice
 id btnRecordVoice
 id btnRegister
 id btnSend
+id btnStartCall
 id btnSubmit
 id btnToggleAudio
-id btnToggleVideo
 id buttonPanel
 id cache_measures
 id callMeasure
@@ -3308,7 +3312,6 @@ id line3
 id linear
 id listMode
 id list_item
-id localVideoView
 id lvChannels
 id lvMessages
 id m3_side_sheet
@@ -3432,7 +3435,6 @@ id progress_horizontal
 id radio
 id ratio
 id rectangles
-id remoteVideoView
 id report_drawn
 id reverseSawtooth
 id right
@@ -3552,6 +3554,7 @@ id tvCallStatus
 id tvMessage
 id tvSender
 id tvTime
+id tvVoiceDuration
 id unchecked
 id uniform
 id unlabeled
@@ -3566,6 +3569,8 @@ id view_tree_saved_state_registry_owner
 id view_tree_view_model_store_owner
 id visible
 id visible_removing_fragment_view_tag
+id voiceLayout
+id voiceProgress
 id west
 id withText
 id with_icon
