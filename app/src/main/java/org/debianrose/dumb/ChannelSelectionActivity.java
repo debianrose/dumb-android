@@ -3,6 +3,8 @@ package org.debianrose.dumb;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -51,6 +53,28 @@ public class ChannelSelectionActivity extends AppCompatActivity {
         });
 
         loadChannels();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_channel_selection, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.menu_2fa_settings) {
+            open2FAManagement();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void open2FAManagement() {
+        Intent intent = new Intent(this, TwoFAManagementActivity.class);
+        intent.putExtra("token", currentToken);
+        intent.putExtra("username", currentUser);
+        startActivity(intent);
     }
 
     private List<String> getChannelDisplayNames() {
@@ -132,7 +156,7 @@ public class ChannelSelectionActivity extends AppCompatActivity {
             protected JSONObject doInBackground(Void... voids) {
                 try {
                     JSONObject payload = new JSONObject();
-                    payload.put("channel", channelId); // Теперь отправляем ID канала
+                    payload.put("channel", channelId);
                     return NetworkUtils.sendPostRequest("/api/channels/join", payload, currentToken);
                 } catch (Exception e) {
                     return null;
@@ -142,7 +166,7 @@ public class ChannelSelectionActivity extends AppCompatActivity {
             @Override
             protected void onPostExecute(JSONObject result) {
                 if (result != null && result.optBoolean("success")) {
-                    loadChannels(); // Перезагружаем список каналов
+                    loadChannels();
                     etChannel.setText("");
                     Toast.makeText(ChannelSelectionActivity.this, "Successfully joined channel", Toast.LENGTH_SHORT).show();
                 } else {
@@ -177,7 +201,6 @@ public class ChannelSelectionActivity extends AppCompatActivity {
                 if (result != null && result.optBoolean("success")) {
                     String channelId = result.optString("channelId");
                     if (channelId != null) {
-                        // Автоматически присоединяемся к созданному каналу
                         joinChannelById(channelId);
                     } else {
                         loadChannels();
@@ -193,7 +216,6 @@ public class ChannelSelectionActivity extends AppCompatActivity {
     }
 
     private void openChat(Channel channel) {
-        // Сначала присоединяемся к каналу, потом открываем чат
         joinChannelByIdAndOpen(channel.id, channel.name);
     }
 

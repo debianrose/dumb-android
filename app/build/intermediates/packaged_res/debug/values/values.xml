@@ -8,8 +8,18 @@
     <color name="ic_launcher_background">#403d40</color>
     <color name="primary">#4A07B7</color>
     <color name="primary_dark">#2E046D</color>
-    <string name="app_name">DUMB Android</string>
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <string name="app_name">Dumb Chat</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm_disable">Confirm Disable</string>
+    <string name="disable_2fa">Disable 2FA</string>
+    <string name="enable_2fa">Enable 2FA</string>
+    <string name="enter_2fa_code">Enter 6-digit code</string>
+    <string name="enter_password">Enter password</string>
+    <string name="setup_2fa">Setup 2FA</string>
+    <string name="title_2fa_management">Two-Factor Authentication</string>
+    <string name="verify_2fa">Verify</string>
+    <style name="AppTheme" parent="Base.AppTheme"/>
+    <style name="Base.AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/colorBackground</item>
         <item name="android:colorBackground">@color/colorBackground</item>
         <item name="android:textColor">@color/colorText</item>
@@ -20,21 +30,16 @@
         <item name="android:editTextStyle">@style/CustomEditText</item>
     </style>
     <style name="Base.Theme.Dumb" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorOnPrimary">@android:color/white</item>
         
-        
         <item name="colorSecondary">@color/accent</item>
         <item name="colorOnSecondary">@android:color/white</item>
         
-        
         <item name="android:statusBarColor">?attr/colorPrimaryDark</item>
         
-        
         <item name="android:navigationBarColor">@android:color/black</item>
-        
         
     </style>
     <style name="CustomButton" parent="Widget.AppCompat.Button">
@@ -47,4 +52,9 @@
         <item name="android:textColorHint">@color/colorHint</item>
     </style>
     <style name="Theme.Dumb" parent="Base.Theme.Dumb"/>
+    <style name="Theme.Dumb.Fullscreen" parent="Theme.Dumb">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
 </resources>

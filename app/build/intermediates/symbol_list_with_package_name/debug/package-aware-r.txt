@@ -3155,6 +3155,8 @@ id bounceBoth
 id bounceEnd
 id bounceStart
 id btnAnswer
+id btnCancel
+id btnConfirm
 id btnCreateChannel
 id btnEndCall
 id btnJoinChannel
@@ -3163,9 +3165,11 @@ id btnPlayVoice
 id btnRecordVoice
 id btnRegister
 id btnSend
+id btnSetup2FA
 id btnStartCall
 id btnSubmit
 id btnToggleAudio
+id btnVerify
 id buttonPanel
 id cache_measures
 id callMeasure
@@ -3300,6 +3304,7 @@ id inward
 id is_pooling_container_tag
 id italic
 id item_touch_helper_previous_elevation
+id ivQrCode
 id jumpToEnd
 id jumpToStart
 id labeled
@@ -3340,6 +3345,7 @@ id material_timepicker_ok_button
 id material_timepicker_view
 id material_value_index
 id matrix
+id menu_2fa_settings
 id menu_logout
 id menu_settings
 id message
@@ -3504,6 +3510,7 @@ id stretch
 id submenuarrow
 id submit_area
 id supportScrollUp
+id switch2FA
 id tabMode
 id tag_accessibility_actions
 id tag_accessibility_clickable_spans
@@ -3552,6 +3559,7 @@ id transition_transform
 id triangle
 id tvCallStatus
 id tvMessage
+id tvSecret
 id tvSender
 id tvTime
 id tvVoiceDuration
@@ -3694,6 +3702,7 @@ layout abc_search_dropdown_item_icons_2line
 layout abc_search_view
 layout abc_select_dialog_material
 layout abc_tooltip
+layout activity_2fa_management
 layout activity_auth
 layout activity_channel_selection
 layout activity_chat
@@ -3715,6 +3724,8 @@ layout design_navigation_menu_item
 layout design_text_input_end_icon
 layout design_text_input_start_icon
 layout dialog_2fa
+layout dialog_2fa_setup
+layout dialog_disable_2fa
 layout m3_alert_dialog
 layout m3_alert_dialog_actions
 layout m3_alert_dialog_title
@@ -3778,6 +3789,7 @@ layout select_dialog_multichoice_material
 layout select_dialog_singlechoice_material
 layout support_simple_spinner_dropdown_item
 menu main_menu
+menu menu_channel_selection
 mipmap ic_launcher
 mipmap ic_launcher_foreground
 mipmap ic_launcher_round
@@ -3818,10 +3830,16 @@ string bottomsheet_action_expand
 string bottomsheet_action_expand_halfway
 string bottomsheet_drag_handle_clicked
 string bottomsheet_drag_handle_content_description
+string cancel
 string character_counter_content_description
 string character_counter_overflowed_content_description
 string character_counter_pattern
 string clear_text_end_icon_content_description
+string confirm_disable
+string disable_2fa
+string enable_2fa
+string enter_2fa_code
+string enter_password
 string error_a11y_label
 string error_icon_content_description
 string exposed_dropdown_menu_content_description
@@ -3939,9 +3957,12 @@ string search_menu_title
 string searchbar_scrolling_view_behavior
 string searchview_clear_text_content_description
 string searchview_navigation_content_description
+string setup_2fa
 string side_sheet_accessibility_pane_title
 string side_sheet_behavior
 string status_bar_notification_info_overflow
+string title_2fa_management
+string verify_2fa
 style AlertDialog_AppCompat
 style AlertDialog_AppCompat_Light
 style Animation_AppCompat_Dialog
@@ -3959,6 +3980,7 @@ style Base_AlertDialog_AppCompat_Light
 style Base_Animation_AppCompat_Dialog
 style Base_Animation_AppCompat_DropDownUp
 style Base_Animation_AppCompat_Tooltip
+style Base_AppTheme
 style Base_CardView
 style Base_DialogWindowTitle_AppCompat
 style Base_DialogWindowTitleBackground_AppCompat
@@ -4498,6 +4520,7 @@ style Theme_Design_Light_BottomSheetDialog
 style Theme_Design_Light_NoActionBar
 style Theme_Design_NoActionBar
 style Theme_Dumb
+style Theme_Dumb_Fullscreen
 style Theme_Material3_Dark
 style Theme_Material3_Dark_BottomSheetDialog
 style Theme_Material3_Dark_Dialog
