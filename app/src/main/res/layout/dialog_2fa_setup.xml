@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="24dp"
+    android:background="@drawable/auth_form_background">
 
     <TextView
         android:layout_width="match_parent"
@@ -11,35 +13,50 @@
         android:text="Setup Two-Factor Authentication"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp"/>
+        android:textColor="@color/colorText"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
 
     <TextView
         android:id="@+id/tvSecret"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:textAppearance="?android:attr/textAppearanceSmall"/>
+        android:textColor="@color/colorTextSecondary"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
 
     <ImageView
         android:id="@+id/ivQrCode"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
         android:layout_gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="20dp"/>
 
-    <EditText
-        android:id="@+id/etToken"
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Dumb.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter 6-digit code"
-        android:inputType="number"
-        android:maxLength="6"/>
+        app:placeholderText="Enter 6-digit code">
 
-    <Button
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etToken"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:maxLength="6"
+            android:textColor="@color/colorText"
+            android:textSize="14sp"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnVerify"
+        style="@style/Widget.Dumb.Button"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:text="Verify and Enable"
-        android:layout_marginTop="16dp"/>
+        android:textSize="12sp"
+        android:layout_marginTop="20dp"/>
 
 </LinearLayout>

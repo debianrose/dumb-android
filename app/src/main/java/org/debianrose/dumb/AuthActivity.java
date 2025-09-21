@@ -10,11 +10,14 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+
 import org.json.JSONObject;
 
 public class AuthActivity extends AppCompatActivity {
 
-    private EditText etUsername, etPassword;
+    private TextInputEditText etUsername, etPassword;
     private Button btnLogin, btnRegister;
     private String currentToken = null;
     private String currentUser = null;
@@ -24,8 +27,10 @@ public class AuthActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_auth);
 
-        etUsername = findViewById(R.id.etUsername);
-        etPassword = findViewById(R.id.etPassword);
+        TextInputLayout tilUsername = findViewById(R.id.tilUsername);
+        TextInputLayout tilPassword = findViewById(R.id.tilPassword);
+        etUsername = (TextInputEditText) tilUsername.getEditText();
+        etPassword = (TextInputEditText) tilPassword.getEditText();
         btnLogin = findViewById(R.id.btnLogin);
         btnRegister = findViewById(R.id.btnRegister);
 
@@ -60,16 +65,13 @@ public class AuthActivity extends AppCompatActivity {
             protected void onPostExecute(JSONObject result) {
                 if (result != null) {
                     if (result.optBoolean("success")) {
-                        // Успешный вход без 2FA
                         currentToken = result.optString("token");
                         currentUser = username;
                         proceedToChannelSelection();
                     } else if (result.optBoolean("requires2FA", false)) {
-                        // Требуется 2FA
                         String sessionId = result.optString("sessionId");
                         handle2FALogin(sessionId, username);
                     } else {
-                        // Обычная ошибка входа
                         String error = result.optString("error", "Login failed");
                         Toast.makeText(AuthActivity.this, error, Toast.LENGTH_SHORT).show();
                     }

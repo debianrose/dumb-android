@@ -1,55 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="16dp"
+    android:background="@drawable/bg_gradient"
+    android:fitsSystemWindows="true">
 
-    <!-- Поиск -->
-    <EditText
-        android:id="@+id/etSearch"
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Dumb.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Search channels..."
-        android:inputType="text"
-        android:imeOptions="actionSearch"/>
+        app:placeholderText="Search channels...">
 
-    <!-- Создание/вход в канал -->
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:textColor="@color/colorText"
+            android:textSize="14sp"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="16dp">
 
-        <EditText
-            android:id="@+id/etChannel"
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Dumb.TextInputLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Channel name or ID"/>
+            app:placeholderText="Channel name or ID">
 
-        <Button
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etChannel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorText"
+                android:textSize="14sp"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnJoinChannel"
+            style="@style/Widget.Dumb.Button"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:text="Join"
-            android:layout_marginStart="8dp"/>
+            android:layout_marginStart="8dp"
+            android:textSize="12sp"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCreateChannel"
+            style="@style/Widget.Dumb.Button"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:text="Create"
-            android:layout_marginStart="8dp"/>
+            android:layout_marginStart="8dp"
+            android:textSize="12sp"/>
 
     </LinearLayout>
 
-    <!-- Список каналов -->
-    <ListView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/lvChannels"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp"/>
+        android:layout_marginTop="16dp"
+        android:background="@drawable/auth_form_background"
+        android:padding="8dp"/>
 
 </LinearLayout>
