@@ -47,15 +47,15 @@
         android:gravity="center_vertical"
         android:layout_marginTop="8dp">
 
-        <com.google.android.material.imageview.ShapeableImageView
+        <ImageButton
             android:id="@+id/btnPlayVoice"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:src="@drawable/ic_mic"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.Dumb.Small"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:scaleType="centerInside" />
 
-        <androidx.core.widget.ContentLoadingProgressBar
+        <ProgressBar
             android:id="@+id/voiceProgress"
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"
             android:layout_width="0dp"

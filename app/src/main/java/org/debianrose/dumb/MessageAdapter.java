@@ -8,10 +8,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -81,6 +79,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
     private String formatDuration(int seconds) {
+        if (seconds <= 0) return "0:00";
         return String.format(Locale.getDefault(), "%d:%02d", seconds / 60, seconds % 60);
     }
 }

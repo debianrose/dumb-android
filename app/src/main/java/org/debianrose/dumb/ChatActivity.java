@@ -15,26 +15,18 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ChatActivity extends AppCompatActivity {
 
@@ -43,22 +35,17 @@ public class ChatActivity extends AppCompatActivity {
     private ListView lvMessages;
     private MessageAdapter messageAdapter;
     private List<Message> messages = new ArrayList<>();
-
-    private WebSocketClient webSocketClient;
     private MediaRecorder mediaRecorder;
     private MediaPlayer mediaPlayer;
     private String audioFilePath;
     private boolean isRecording = false;
-
     private String currentToken;
     private String currentUser;
     private String currentChannelId;
     private String currentChannelName;
-
     private Handler messageRefreshHandler = new Handler();
     private Handler voiceProgressHandler = new Handler();
     private static final long MESSAGE_REFRESH_INTERVAL = 3000;
-    
     private String currentPlayingMessageId = null;
     private int voiceDuration = 0;
     private int currentPosition = 0;
@@ -395,7 +382,7 @@ public class ChatActivity extends AppCompatActivity {
         JSONObject voiceObj = msgObj.optJSONObject("voice");
         if (voiceObj != null) {
             String filename = voiceObj.optString("filename");
-            int duration = voiceObj.optInt("duration");
+            int duration = voiceObj.optInt("duration", 0);
             String downloadUrl = voiceObj.optString("downloadUrl");
             
             Message.VoiceAttachment voiceAttachment = new Message.VoiceAttachment(filename, duration, downloadUrl);
@@ -611,11 +598,6 @@ public class ChatActivity extends AppCompatActivity {
         messageRefreshHandler.removeCallbacksAndMessages(null);
         voiceProgressHandler.removeCallbacksAndMessages(null);
         stopVoicePlayback();
-        
-        if (webSocketClient != null) {
-            webSocketClient.close();
-            webSocketClient = null;
-        }
         
         cleanupMediaRecorder();
     }

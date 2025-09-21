@@ -11,14 +11,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-
 import org.json.JSONObject;
 import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
-import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
@@ -26,7 +23,6 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RtpReceiver;
 import org.webrtc.SessionDescription;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,19 +30,15 @@ public class VoiceCallActivity extends AppCompatActivity implements PeerConnecti
 
     private TextView tvCallStatus;
     private Button btnEndCall, btnToggleAudio, btnAnswer;
-
     private PeerConnectionFactory peerConnectionFactory;
     private PeerConnection peerConnection;
     private AudioTrack localAudioTrack;
-
     private String currentToken;
     private String currentUser;
     private String targetUser;
     private String currentChannelId;
-
     private boolean isAudioMuted = false;
     private boolean isIncomingCall = false;
-
     private List<IceCandidate> iceCandidates = new ArrayList<>();
     private Handler handler = new Handler();
 
@@ -64,10 +56,13 @@ public class VoiceCallActivity extends AppCompatActivity implements PeerConnecti
         initViews();
         checkPermissions();
         
+        initializeWebRTC();
+        
         if (isIncomingCall) {
             handleIncomingCall();
         } else {
-            initializeWebRTC();
+            createPeerConnection();
+            createLocalMediaStream();
             initCall();
         }
     }
@@ -91,8 +86,6 @@ public class VoiceCallActivity extends AppCompatActivity implements PeerConnecti
     }
 
     private void handleIncomingCall() {
-        // Метод уже реализован в initViews()
-        // Просто устанавливаем текст статуса и показываем кнопку ответа
         tvCallStatus.setText("Incoming call from " + targetUser);
         btnAnswer.setVisibility(View.VISIBLE);
     }
@@ -149,8 +142,6 @@ public class VoiceCallActivity extends AppCompatActivity implements PeerConnecti
     }
 
     private void initCall() {
-        createPeerConnection();
-        createLocalMediaStream();
         createOffer();
     }
 
@@ -202,7 +193,7 @@ public class VoiceCallActivity extends AppCompatActivity implements PeerConnecti
             return;
         }
         
-        initializeWebRTC();
+        createLocalMediaStream();
         getWebRTCOffer();
     }
 
@@ -221,8 +212,6 @@ public class VoiceCallActivity extends AppCompatActivity implements PeerConnecti
             protected void onPostExecute(JSONObject result) {
                 if (result != null && result.optBoolean("success")) {
                     String offerSdp = result.optString("offer");
-                    createPeerConnection();
-                    createLocalMediaStream();
                     
                     SessionDescription offer = new SessionDescription(SessionDescription.Type.OFFER, offerSdp);
                     
@@ -395,7 +384,8 @@ public class VoiceCallActivity extends AppCompatActivity implements PeerConnecti
         if (requestCode == 101) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 if (!isIncomingCall) {
-                    initializeWebRTC();
+                    createPeerConnection();
+                    createLocalMediaStream();
                     initCall();
                 }
             }

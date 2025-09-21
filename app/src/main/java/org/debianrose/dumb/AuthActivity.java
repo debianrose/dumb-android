@@ -7,17 +7,12 @@ import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
-
 import org.json.JSONObject;
 
 public class AuthActivity extends AppCompatActivity {
 
-    private TextInputEditText etUsername, etPassword;
+    private EditText etUsername, etPassword;
     private Button btnLogin, btnRegister;
     private String currentToken = null;
     private String currentUser = null;
@@ -27,10 +22,8 @@ public class AuthActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_auth);
 
-        TextInputLayout tilUsername = findViewById(R.id.tilUsername);
-        TextInputLayout tilPassword = findViewById(R.id.tilPassword);
-        etUsername = (TextInputEditText) tilUsername.getEditText();
-        etPassword = (TextInputEditText) tilPassword.getEditText();
+        etUsername = findViewById(R.id.etUsername);
+        etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
         btnRegister = findViewById(R.id.btnRegister);
 

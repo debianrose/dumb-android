@@ -67,7 +67,7 @@
 
     </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
+    <ListView
         android:id="@+id/lvChannels"
         android:layout_width="match_parent"
         android:layout_height="0dp"
