@@ -58,18 +58,23 @@ public class AuthActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(JSONObject result) {
-                if (result != null && result.optBoolean("success")) {
-                    currentToken = result.optString("token");
-                    currentUser = username;
-                    
-                    if (result.optBoolean("requires2FA", false)) {
-                        handle2FALogin(result.optString("sessionId"), username);
-                    } else {
+                if (result != null) {
+                    if (result.optBoolean("success")) {
+                        // Успешный вход без 2FA
+                        currentToken = result.optString("token");
+                        currentUser = username;
                         proceedToChannelSelection();
+                    } else if (result.optBoolean("requires2FA", false)) {
+                        // Требуется 2FA
+                        String sessionId = result.optString("sessionId");
+                        handle2FALogin(sessionId, username);
+                    } else {
+                        // Обычная ошибка входа
+                        String error = result.optString("error", "Login failed");
+                        Toast.makeText(AuthActivity.this, error, Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    String error = result != null ? result.optString("error", "Login failed") : "Login failed";
-                    Toast.makeText(AuthActivity.this, error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AuthActivity.this, "Login failed: no response", Toast.LENGTH_SHORT).show();
                 }
             }
         }.execute();

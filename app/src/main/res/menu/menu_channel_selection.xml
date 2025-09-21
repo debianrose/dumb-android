@@ -7,4 +7,10 @@
         android:title="2FA Settings"
         app:showAsAction="never"/>
 
+    <item
+        android:id="@+id/menu_refresh"
+        android:title="Refresh"
+        android:icon="@drawable/ic_refresh"
+        app:showAsAction="ifRoom"/>
+
 </menu>

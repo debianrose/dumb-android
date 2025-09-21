@@ -3,49 +3,53 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="8dp">
 
+    <!-- Поиск -->
+    <EditText
+        android:id="@+id/etSearch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Search channels..."
+        android:inputType="text"
+        android:imeOptions="actionSearch"/>
+
+    <!-- Создание/вход в канал -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
+        android:layout_marginTop="8dp">
 
         <EditText
             android:id="@+id/etChannel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Channel name"
-            android:inputType="text" />
-
-        <Button
-            android:id="@+id/btnCreateChannel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Create"
-            android:layout_marginLeft="8dp" />
+            android:hint="Channel name or ID"/>
 
         <Button
             android:id="@+id/btnJoinChannel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Join"
-            android:layout_marginLeft="8dp" />
+            android:layout_marginStart="8dp"/>
+
+        <Button
+            android:id="@+id/btnCreateChannel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create"
+            android:layout_marginStart="8dp"/>
 
     </LinearLayout>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Available Channels:"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
-
+    <!-- Список каналов -->
     <ListView
         android:id="@+id/lvChannels"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:layout_marginTop="8dp"/>
 
 </LinearLayout>

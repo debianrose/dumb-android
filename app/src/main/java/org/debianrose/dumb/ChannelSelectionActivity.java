@@ -3,8 +3,11 @@ package org.debianrose.dumb;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -22,10 +25,11 @@ import java.util.List;
 public class ChannelSelectionActivity extends AppCompatActivity {
 
     private ListView lvChannels;
-    private EditText etChannel;
+    private EditText etChannel, etSearch;
     private Button btnJoinChannel, btnCreateChannel;
     private ArrayAdapter<String> channelAdapter;
     private List<Channel> channels = new ArrayList<>();
+    private List<Channel> allChannels = new ArrayList<>();
     private String currentToken;
     private String currentUser;
 
@@ -39,10 +43,11 @@ public class ChannelSelectionActivity extends AppCompatActivity {
 
         lvChannels = findViewById(R.id.lvChannels);
         etChannel = findViewById(R.id.etChannel);
+        etSearch = findViewById(R.id.etSearch);
         btnJoinChannel = findViewById(R.id.btnJoinChannel);
         btnCreateChannel = findViewById(R.id.btnCreateChannel);
 
-        channelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, getChannelDisplayNames());
+        channelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, new ArrayList<>());
         lvChannels.setAdapter(channelAdapter);
 
         btnJoinChannel.setOnClickListener(v -> joinChannel());
@@ -52,7 +57,21 @@ public class ChannelSelectionActivity extends AppCompatActivity {
             openChat(channel);
         });
 
-        loadChannels();
+        // Добавляем поиск
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterChannels(s.toString());
+            }
+
+            @Override
+    public void afterTextChanged(Editable s) {}
+        });
+
+        loadAllChannels();
     }
 
     @Override
@@ -66,6 +85,9 @@ public class ChannelSelectionActivity extends AppCompatActivity {
         if (item.getItemId() == R.id.menu_2fa_settings) {
             open2FAManagement();
             return true;
+        } else if (item.getItemId() == R.id.menu_refresh) {
+            loadAllChannels();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -77,6 +99,28 @@ public class ChannelSelectionActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    private void filterChannels(String query) {
+        if (query.isEmpty()) {
+            channels.clear();
+            channels.addAll(allChannels);
+        } else {
+            channels.clear();
+            for (Channel channel : allChannels) {
+                if (channel.name.toLowerCase().contains(query.toLowerCase()) ||
+                    channel.id.toLowerCase().contains(query.toLowerCase())) {
+                    channels.add(channel);
+                }
+            }
+        }
+        updateChannelList();
+    }
+
+    private void updateChannelList() {
+        channelAdapter.clear();
+        channelAdapter.addAll(getChannelDisplayNames());
+        channelAdapter.notifyDataSetChanged();
+    }
+
     private List<String> getChannelDisplayNames() {
         List<String> names = new ArrayList<>();
         for (Channel channel : channels) {
@@ -85,12 +129,14 @@ public class ChannelSelectionActivity extends AppCompatActivity {
         return names;
     }
 
-    private void loadChannels() {
+    private void loadAllChannels() {
         new AsyncTask<Void, Void, JSONObject>() {
             @Override
             protected JSONObject doInBackground(Void... voids) {
                 try {
-                    return NetworkUtils.sendGetRequest("/api/channels", currentToken);
+                    JSONObject payload = new JSONObject();
+                    payload.put("query", "%");
+                    return NetworkUtils.sendPostRequest("/api/channels/search", payload, currentToken);
                 } catch (Exception e) {
                     return null;
                 }
@@ -99,7 +145,9 @@ public class ChannelSelectionActivity extends AppCompatActivity {
             @Override
             protected void onPostExecute(JSONObject result) {
                 if (result != null && result.optBoolean("success")) {
+                    allChannels.clear();
                     channels.clear();
+                    
                     JSONArray channelsArray = result.optJSONArray("channels");
                     if (channelsArray != null) {
                         for (int i = 0; i < channelsArray.length(); i++) {
@@ -108,17 +156,20 @@ public class ChannelSelectionActivity extends AppCompatActivity {
                                 Channel channel = new Channel(
                                         channelObj.optString("id"),
                                         channelObj.optString("name"),
-                                        channelObj.optString("owner")
+                                        channelObj.optString("creator")
                                 );
+                                allChannels.add(channel);
                                 channels.add(channel);
                             }
                         }
                     }
-                    channelAdapter.clear();
-                    channelAdapter.addAll(getChannelDisplayNames());
-                    channelAdapter.notifyDataSetChanged();
+                    
+                    updateChannelList();
+                    Toast.makeText(ChannelSelectionActivity.this, 
+                            "Loaded " + allChannels.size() + " channels", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(ChannelSelectionActivity.this, "Failed to load channels", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ChannelSelectionActivity.this, 
+                            "Failed to load channels", Toast.LENGTH_SHORT).show();
                 }
             }
         }.execute();
@@ -142,7 +193,7 @@ public class ChannelSelectionActivity extends AppCompatActivity {
     }
 
     private Channel findChannelByIdOrName(String input) {
-        for (Channel channel : channels) {
+        for (Channel channel : allChannels) {
             if (channel.id.equals(input) || channel.name.equals(input)) {
                 return channel;
             }
@@ -166,11 +217,14 @@ public class ChannelSelectionActivity extends AppCompatActivity {
             @Override
             protected void onPostExecute(JSONObject result) {
                 if (result != null && result.optBoolean("success")) {
-                    loadChannels();
+                    loadAllChannels(); // Обновляем список после вступления
                     etChannel.setText("");
-                    Toast.makeText(ChannelSelectionActivity.this, "Successfully joined channel", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ChannelSelectionActivity.this, 
+                            "Successfully joined channel", Toast.LENGTH_SHORT).show();
                 } else {
-                    String error = result != null ? result.optString("error", "Failed to join channel") : "Failed to join channel";
+                    String error = result != null ? 
+                            result.optString("error", "Failed to join channel") : 
+                            "Failed to join channel";
                     Toast.makeText(ChannelSelectionActivity.this, error, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -203,12 +257,15 @@ public class ChannelSelectionActivity extends AppCompatActivity {
                     if (channelId != null) {
                         joinChannelById(channelId);
                     } else {
-                        loadChannels();
+                        loadAllChannels();
                     }
                     etChannel.setText("");
-                    Toast.makeText(ChannelSelectionActivity.this, "Channel created: " + channelName, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ChannelSelectionActivity.this, 
+                            "Channel created: " + channelName, Toast.LENGTH_SHORT).show();
                 } else {
-                    String error = result != null ? result.optString("error", "Failed to create channel") : "Failed to create channel";
+                    String error = result != null ? 
+                            result.optString("error", "Failed to create channel") : 
+                            "Failed to create channel";
                     Toast.makeText(ChannelSelectionActivity.this, error, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -242,7 +299,9 @@ public class ChannelSelectionActivity extends AppCompatActivity {
                     intent.putExtra("channelName", channelName);
                     startActivity(intent);
                 } else {
-                    String error = result != null ? result.optString("error", "Failed to join channel") : "Failed to join channel";
+                    String error = result != null ? 
+                            result.optString("error", "Failed to join channel") : 
+                            "Failed to join channel";
                     Toast.makeText(ChannelSelectionActivity.this, error, Toast.LENGTH_SHORT).show();
                 }
             }

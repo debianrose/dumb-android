@@ -161,7 +161,8 @@ public class ChatActivity extends AppCompatActivity {
                     JSONObject payload = new JSONObject();
                     payload.put("toUser", params[0]);
                     payload.put("channel", currentChannelId);
-                    
+                    payload.put("offer", "dummy-offer-sdp");
+
                     return NetworkUtils.sendPostRequest("/api/webrtc/offer", payload, currentToken);
                 } catch (Exception e) {
                     return null;
