@@ -8,11 +8,21 @@
     android:background="@drawable/bg_gradient"
     android:fitsSystemWindows="true">
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Channels"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.Dumb.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:placeholderText="Search channels...">
+        android:hint="Search channels...">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etSearch"
@@ -36,7 +46,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            app:placeholderText="Channel name or ID">
+            android:hint="Channel name or ID">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etChannel"
