@@ -24,7 +24,8 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="@drawable/auth_form_background"
-        android:padding="20dp">
+        android:padding="20dp"
+        android:layout_marginBottom="16dp">
 
         <TextView
             android:layout_width="0dp"
@@ -48,7 +49,15 @@
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:text="Setup 2FA"
-        android:layout_marginTop="16dp"
+        android:layout_marginBottom="12dp"
+        android:enabled="false"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDisable2FA"
+        style="@style/Widget.Dumb.Button.Outlined"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Disable 2FA"
         android:enabled="false"/>
 
 </LinearLayout>

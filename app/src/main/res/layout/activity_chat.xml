@@ -7,6 +7,33 @@
     android:background="@drawable/bg_gradient"
     android:fitsSystemWindows="true">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/auth_form_background"
+        android:padding="16dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvChannelName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="General Chat"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorText"/>
+
+        <ImageButton
+            android:id="@+id/btnChannelSettings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_menu"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="@color/colorText"/>
+    </LinearLayout>
+
     <ListView
         android:id="@+id/lvMessages"
         android:layout_width="match_parent"
@@ -28,8 +55,11 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:text="Record Voice"
-            android:textSize="12sp" />
+            android:text="Record"
+            android:textSize="12sp"
+            app:icon="@drawable/ic_mic"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnStartCall"
@@ -37,9 +67,12 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:text="Start Call"
+            android:text="Call"
             android:textSize="12sp"
-            android:layout_marginStart="8dp" />
+            android:layout_marginStart="8dp"
+            app:icon="@drawable/ic_chat"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"/>
 
     </LinearLayout>
 
@@ -62,7 +95,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/colorText"
-                android:textSize="14sp" />
+                android:textSize="14sp"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -73,7 +106,10 @@
             android:layout_height="48dp"
             android:text="Send"
             android:textSize="12sp"
-            android:layout_marginStart="8dp" />
+            android:layout_marginStart="8dp"
+            app:icon="@drawable/ic_send"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"/>
 
     </LinearLayout>
 
