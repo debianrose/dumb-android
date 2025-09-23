@@ -3,7 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:file_picker/file_picker.dart';
 import 'voice_service.dart';
+import 'call_screen.dart';
+import 'webrtc_service.dart';
 
 class Message {
   final String id;
@@ -12,6 +15,9 @@ class Message {
   final int timestamp;
   final String channel;
   final VoiceAttachment? voice;
+  final FileAttachment? file;
+  final String? replyTo;
+  final Message? repliedMessage;
 
   Message({
     required this.id,
@@ -20,12 +26,20 @@ class Message {
     required this.timestamp,
     required this.channel,
     this.voice,
+    this.file,
+    this.replyTo,
+    this.repliedMessage,
   });
 
   factory Message.fromJson(Map<String, dynamic> json) {
     VoiceAttachment? voice;
     if (json['voice'] != null) {
       voice = VoiceAttachment.fromJson(json['voice']);
+    }
+    
+    FileAttachment? file;
+    if (json['file'] != null) {
+      file = FileAttachment.fromJson(json['file']);
     }
     
     return Message(
@@ -35,6 +49,8 @@ class Message {
       timestamp: json['ts'] ?? 0,
       channel: json['channel'] ?? '',
       voice: voice,
+      file: file,
+      replyTo: json['replyTo'],
     );
   }
 }
@@ -56,6 +72,49 @@ class VoiceAttachment {
       duration: json['duration'] ?? 0,
       downloadUrl: json['downloadUrl'] ?? '',
     );
+  }
+}
+
+class FileAttachment {
+  final String filename;
+  final String originalName;
+  final String mimetype;
+  final int size;
+  final String downloadUrl;
+
+  FileAttachment({
+    required this.filename,
+    required this.originalName,
+    required this.mimetype,
+    required this.size,
+    required this.downloadUrl,
+  });
+
+  factory FileAttachment.fromJson(Map<String, dynamic> json) {
+    return FileAttachment(
+      filename: json['filename'] ?? '',
+      originalName: json['originalName'] ?? '',
+      mimetype: json['mimetype'] ?? '',
+      size: json['size'] ?? 0,
+      downloadUrl: json['downloadUrl'] ?? '',
+    );
+  }
+
+  String get fileSize {
+    if (size < 1024) return '$size B';
+    if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)} KB';
+    return '${(size / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  IconData get fileIcon {
+    if (mimetype.startsWith('image/')) return Icons.image;
+    if (mimetype.startsWith('video/')) return Icons.video_file;
+    if (mimetype.startsWith('audio/')) return Icons.audio_file;
+    if (mimetype.contains('pdf')) return Icons.picture_as_pdf;
+    if (mimetype.contains('word')) return Icons.description;
+    if (mimetype.contains('excel')) return Icons.table_chart;
+    if (mimetype.contains('zip')) return Icons.folder_zip;
+    return Icons.insert_drive_file;
   }
 }
 
@@ -81,6 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Message> _messages = [];
   final AudioPlayer _audioPlayer = AudioPlayer();
   final VoiceService _voiceService = VoiceService();
+  final WebRTCService _webRTCService = WebRTCService();
   
   bool _isRecording = false;
   bool _isLoading = false;
@@ -88,6 +148,8 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _currentPlayingMessageId;
   int _currentPosition = 0;
   int _voiceDuration = 0;
+  Message? _replyingTo;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -101,11 +163,76 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _audioPlayer.dispose();
     _voiceService.dispose();
+    _webRTCService.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _initializeServices() async {
     await _voiceService.init();
+    await _webRTCService.initialize();
+    
+    _webRTCService.onRemoteStream = (stream) {
+      // Обработка удаленного потока
+    };
+    
+    _webRTCService.onCallEnded = () {
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    };
+
+    _webRTCService.onCallIncoming = (fromUser, channel) {
+      _showIncomingCallDialog(fromUser, channel);
+    };
+  }
+
+  void _showIncomingCallDialog(String fromUser, String channel) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('Incoming Call'),
+        content: Text('$fromUser is calling you in $channel'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _webRTCService.rejectCall(fromUser);
+            },
+            child: Text('Reject'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _answerCall(fromUser);
+            },
+            child: Text('Answer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _answerCall(String fromUser) async {
+    try {
+      await _webRTCService.answerCall(fromUser, widget.token);
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CallScreen(
+            webRTCService: _webRTCService,
+            targetUser: fromUser,
+            isIncoming: true,
+            token: widget.token,
+            username: widget.username,
+          ),
+        ),
+      );
+    } catch (e) {
+      _showError('Failed to answer call: ${e.toString()}');
+    }
   }
 
   Future<void> _loadMessages() async {
@@ -130,11 +257,45 @@ class _ChatScreenState extends State<ChatScreen> {
         if (messagesArray != null) {
           final newMessages = messagesArray.map((msgJson) => Message.fromJson(msgJson)).toList();
           
-          if (_messages.length != newMessages.length) {
+          // Обогащаем сообщения информацией о replied сообщениях
+          final enrichedMessages = <Message>[];
+          for (var message in newMessages) {
+            if (message.replyTo != null) {
+              final repliedMessage = newMessages.firstWhere(
+                (m) => m.id == message.replyTo,
+                orElse: () => Message(
+                  id: '',
+                  from: 'Unknown',
+                  text: 'Original message not found',
+                  timestamp: 0,
+                  channel: widget.channelId,
+                ),
+              );
+              enrichedMessages.add(Message(
+                id: message.id,
+                from: message.from,
+                text: message.text,
+                timestamp: message.timestamp,
+                channel: message.channel,
+                voice: message.voice,
+                file: message.file,
+                replyTo: message.replyTo,
+                repliedMessage: repliedMessage,
+              ));
+            } else {
+              enrichedMessages.add(message);
+            }
+          }
+          
+          if (_messages.length != enrichedMessages.length) {
             setState(() {
               _messages.clear();
-              _messages.addAll(newMessages);
+              _messages.addAll(enrichedMessages);
             });
+            
+            if (_scrollController.hasClients) {
+              _scrollController.jumpTo(0);
+            }
           }
         }
       } else {
@@ -161,8 +322,8 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     
-    if (text.isEmpty) {
-      _showError('Please enter message');
+    if (text.isEmpty && _replyingTo == null) {
+      _showError('Please enter message or select file');
       return;
     }
 
@@ -180,6 +341,7 @@ class _ChatScreenState extends State<ChatScreen> {
         body: json.encode({
           'channel': widget.channelId,
           'text': text,
+          'replyTo': _replyingTo?.id,
         }),
       );
 
@@ -187,6 +349,7 @@ class _ChatScreenState extends State<ChatScreen> {
       
       if (result['success'] == true) {
         _messageController.clear();
+        _cancelReply();
         _loadMessages();
         _showSuccess('Message sent');
       } else {
@@ -199,6 +362,112 @@ class _ChatScreenState extends State<ChatScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _uploadFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      final filePath = file.path;
+
+      if (filePath == null) {
+        _showError('Failed to get file path');
+        return;
+      }
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Загружаем файл
+      final request = http.MultipartRequest(
+        'POST', 
+        Uri.parse('http://95.81.122.186:3000/api/upload/file')
+      );
+      
+      request.headers['Authorization'] = 'Bearer ${widget.token}';
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+      final resultJson = json.decode(responseData);
+
+      if (resultJson['success'] == true) {
+        final fileId = resultJson['file']['id'];
+        
+        // Отправляем сообщение с файлом
+        await _sendMessageWithFile(fileId, file.name);
+      } else {
+        _showError(resultJson['error'] ?? 'File upload failed');
+      }
+    } catch (e) {
+      _showError('Failed to upload file: ${e.toString()}');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _sendMessageWithFile(String fileId, String fileName) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://95.81.122.186:3000/api/message'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.token}',
+        },
+        body: json.encode({
+          'channel': widget.channelId,
+          'text': 'File: $fileName',
+          'fileId': fileId,
+          'replyTo': _replyingTo?.id,
+        }),
+      );
+
+      final result = json.decode(response.body);
+      
+      if (result['success'] == true) {
+        _cancelReply();
+        _loadMessages();
+        _showSuccess('File sent');
+      } else {
+        _showError(result['error'] ?? 'Failed to send file');
+      }
+    } catch (e) {
+      _showError('Failed to send file: ${e.toString()}');
+    }
+  }
+
+  Future<void> _downloadFile(FileAttachment file) async {
+    try {
+      final url = 'http://95.81.122.186:3000/api/download/${file.filename}';
+      _showSuccess('Downloading: ${file.originalName}');
+      // В реальном приложении здесь будет логика сохранения файла
+      print('Download URL: $url');
+    } catch (e) {
+      _showError('Failed to download file: ${e.toString()}');
+    }
+  }
+
+  void _startReply(Message message) {
+    setState(() {
+      _replyingTo = message;
+    });
+    _messageController.text = '';
+    FocusScope.of(context).requestFocus(FocusNode());
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyingTo = null;
+    });
   }
 
   Future<void> _toggleVoiceRecording() async {
@@ -298,13 +567,15 @@ class _ChatScreenState extends State<ChatScreen> {
         body: json.encode({
           'channel': widget.channelId,
           'text': '[Voice message]',
-          'voiceMessage': voiceId,  // Ключ исправлен на voiceMessage
+          'voiceMessage': voiceId,
+          'replyTo': _replyingTo?.id,
         }),
       );
 
       final messageResult = json.decode(messageResponse.body);
       
       if (messageResult['success'] == true) {
+        _cancelReply();
         _loadMessages();
         _showSuccess('Voice message sent');
       } else {
@@ -380,6 +651,62 @@ class _ChatScreenState extends State<ChatScreen> {
     return 0;
   }
 
+  Future<void> _startVoiceCall() async {
+    try {
+      final otherUsers = _messages
+          .map((msg) => msg.from)
+          .where((user) => user != widget.username)
+          .toSet()
+          .toList();
+          
+      if (otherUsers.isEmpty) {
+        _showError('No other users in channel');
+        return;
+      }
+
+      final targetUser = otherUsers.first;
+      
+      await _webRTCService.startCall(targetUser, widget.channelId, widget.token);
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CallScreen(
+            webRTCService: _webRTCService,
+            targetUser: targetUser,
+            isIncoming: false,
+            token: widget.token,
+            username: widget.username,
+          ),
+        ),
+      );
+      
+    } catch (e) {
+      _showError('Failed to start call: ${e.toString()}');
+    }
+  }
+
+  Future<void> _startVoiceCallToUser(String targetUser) async {
+    try {
+      await _webRTCService.startCall(targetUser, widget.channelId, widget.token);
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CallScreen(
+            webRTCService: _webRTCService,
+            targetUser: targetUser,
+            isIncoming: false,
+            token: widget.token,
+            username: widget.username,
+          ),
+        ),
+      );
+    } catch (e) {
+      _showError('Failed to start call: ${e.toString()}');
+    }
+  }
+
   void _showError(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -414,6 +741,162 @@ class _ChatScreenState extends State<ChatScreen> {
     return '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
   }
 
+  Widget _buildReplyHeader() {
+    if (_replyingTo == null) return SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        border: Border(left: BorderSide(color: Colors.blue, width: 3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Replying to ${_replyingTo!.from}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Colors.blue[700],
+                  ),
+                ),
+                Text(
+                  _replyingTo!.text.length > 50 
+                      ? '${_replyingTo!.text.substring(0, 50)}...' 
+                      : _replyingTo!.text,
+                  style: TextStyle(fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.close, size: 16),
+            onPressed: _cancelReply,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVoiceMessage(Message message, bool isPlaying, int progress) {
+    return Container(
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: Icon(
+              isPlaying ? Icons.pause : Icons.play_arrow,
+              color: Colors.blue,
+            ),
+            onPressed: () => _toggleVoiceMessage(message),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LinearProgressIndicator(
+                  value: progress / 100.0,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  _formatDuration(message.voice!.duration),
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFileMessage(FileAttachment file) {
+    return GestureDetector(
+      onTap: () => _downloadFile(file),
+      child: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(file.fileIcon, color: Colors.blue),
+            SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    file.originalName,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    file.fileSize,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.download, color: Colors.blue),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMessageOptions(Message message) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.reply),
+              title: Text('Reply'),
+              onTap: () {
+                Navigator.pop(context);
+                _startReply(message);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.content_copy),
+              title: Text('Copy Text'),
+              onTap: () {
+                Navigator.pop(context);
+                // Логика копирования текста
+              },
+            ),
+            if (message.from != widget.username)
+              ListTile(
+                leading: Icon(Icons.call),
+                title: Text('Call User'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _startVoiceCallToUser(message.from);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessageBubble(Message message) {
     final isOwnMessage = message.from == widget.username;
     final isPlaying = _currentPlayingMessageId == message.id;
@@ -431,78 +914,91 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           
           Flexible(
-            child: Container(
-              padding: EdgeInsets.all(12),
-              margin: EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: isOwnMessage ? Colors.blue[100] : Colors.grey[200],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!isOwnMessage)
+            child: GestureDetector(
+              onLongPress: () => _showMessageOptions(message),
+              child: Container(
+                padding: EdgeInsets.all(12),
+                margin: EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: isOwnMessage ? Colors.blue[100] : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (message.repliedMessage != null) ...[
+                      Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 30,
+                              color: Colors.blue,
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    message.repliedMessage!.from,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                  Text(
+                                    message.repliedMessage!.text.length > 30
+                                        ? '${message.repliedMessage!.text.substring(0, 30)}...'
+                                        : message.repliedMessage!.text,
+                                    style: TextStyle(fontSize: 10),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                    ],
+                    
+                    if (!isOwnMessage)
+                      Text(
+                        message.from,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    
+                    if (message.text.isNotEmpty && message.text != '[Voice message]')
+                      Text(message.text),
+                    
+                    if (message.voice != null) 
+                      _buildVoiceMessage(message, isPlaying, progress),
+                    
+                    if (message.file != null) 
+                      _buildFileMessage(message.file!),
+                    
+                    SizedBox(height: 4),
                     Text(
-                      message.from,
+                      _formatTime(message.timestamp),
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: 10,
                         color: Colors.grey[600],
                       ),
                     ),
-                  
-                  if (message.text.isNotEmpty && message.text != '[Voice message]')
-                    Text(message.text),
-                  
-                  if (message.voice != null) ...[
-                    SizedBox(height: 8),
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              isPlaying ? Icons.pause : Icons.play_arrow,
-                              color: Colors.blue,
-                            ),
-                            onPressed: () => _toggleVoiceMessage(message),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                LinearProgressIndicator(
-                                  value: progress / 100.0,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  _formatDuration(message.voice!.duration),
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
-                  
-                  SizedBox(height: 4),
-                  Text(
-                    _formatTime(message.timestamp),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -517,6 +1013,11 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Text(widget.channelName),
         actions: [
+          IconButton(
+            icon: Icon(Icons.call, color: Colors.green),
+            onPressed: _startVoiceCall,
+            tooltip: 'Start voice call',
+          ),
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: _loadMessages,
@@ -540,6 +1041,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   )
                 : ListView.builder(
                     reverse: true,
+                    controller: _scrollController,
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final message = _messages[_messages.length - 1 - index];
@@ -548,10 +1050,18 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
           ),
           
+          _buildReplyHeader(),
+          
           Padding(
             padding: EdgeInsets.all(8.0),
             child: Row(
               children: [
+                IconButton(
+                  icon: Icon(Icons.attach_file),
+                  onPressed: _uploadFile,
+                  tooltip: 'Attach file',
+                ),
+                
                 Expanded(
                   child: TextField(
                     controller: _messageController,
