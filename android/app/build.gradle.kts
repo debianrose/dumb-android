@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.dumb_android_flutter"
+    namespace = "org.debianrose.dumb"
     compileSdk = 35
     ndkVersion = "27.1.12297006"  
     buildToolsVersion = "35.0.0"
