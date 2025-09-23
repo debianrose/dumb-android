@@ -1,5 +1,5 @@
-name: dumb_android_flutter
-description: Flutter DUMB Client
+name: dumb_android
+description: Android Client
 
 publish_to: 'none'
 
@@ -14,6 +14,14 @@ dependencies:
   http: ^1.1.0
   audioplayers: ^5.2.1
   permission_handler: ^11.0.1
+  record: ^5.0.1
+  path_provider: ^2.1.1
+  web_socket_channel: ^2.4.0
+  flutter_sound: ^9.2.13
+  file_picker: ^6.1.1
+  flutter_webrtc: ^0.9.48
+  sensors: ^2.0.2
+  connectivity_plus: ^5.0.1
 
 dev_dependencies:
   flutter_test:
@@ -22,6 +30,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-  assets:
-    - assets/
