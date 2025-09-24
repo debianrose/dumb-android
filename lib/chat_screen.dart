@@ -7,13 +7,15 @@ import 'utils.dart';
 class ChatScreen extends StatefulWidget {
   final ApiClient apiClient;
   final String currentUser;
-  final VoidCallback onLogout;
+  final String channelId;
+  final VoidCallback onBack;
 
   const ChatScreen({
     super.key,
     required this.apiClient,
     required this.currentUser,
-    required this.onLogout,
+    required this.channelId,
+    required this.onBack,
   });
 
   @override
@@ -23,12 +25,9 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final WebSocketClient _wsClient = WebSocketClient();
   final _messageController = TextEditingController();
-  final _channelJoinController = TextEditingController();
   
-  List<Channel> _channels = [];
   List<Message> _messages = [];
-  List<User> _users = [];
-  Channel? _selectedChannel;
+  Channel? _channel;
   bool _isLoading = true;
 
   @override
@@ -38,8 +37,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _initializeChat() async {
-    await _loadChannels();
-    await _loadUsers();
+    await _loadChannelInfo();
+    await _loadMessages();
     
     final token = await getStoredToken();
     if (token != null) {
@@ -50,25 +49,28 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _isLoading = false);
   }
 
-  Future<void> _loadChannels() async {
+  Future<void> _loadChannelInfo() async {
     final response = await widget.apiClient.getChannels();
     if (response.success) {
-      setState(() {
-        _channels = (response.data?['channels'] as List?)
-            ?.map((json) => Channel.fromJson(json))
-            .toList() ?? [];
-        if (_channels.isNotEmpty && _selectedChannel == null) {
-          _selectedChannel = _channels.first;
-          _loadMessages();
-        }
-      });
+      final channels = (response.data?['channels'] as List?)
+          ?.map((json) => Channel.fromJson(json))
+          .toList() ?? [];
+      
+      _channel = channels.firstWhere(
+        (channel) => channel.id == widget.channelId,
+        orElse: () => Channel(
+          id: widget.channelId,
+          name: 'Неизвестный канал',
+          createdBy: 'Неизвестно',
+          createdAt: 0,
+          memberCount: 0,
+        ),
+      );
     }
   }
 
   Future<void> _loadMessages() async {
-    if (_selectedChannel == null) return;
-    
-    final response = await widget.apiClient.getMessages(_selectedChannel!.id);
+    final response = await widget.apiClient.getMessages(widget.channelId);
     if (response.success) {
       setState(() {
         _messages = (response.data?['messages'] as List?)
@@ -78,19 +80,8 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> _loadUsers() async {
-    final response = await widget.apiClient.getUsers();
-    if (response.success) {
-      setState(() {
-        _users = (response.data?['users'] as List?)
-            ?.map((json) => User.fromJson(json))
-            .toList() ?? [];
-      });
-    }
-  }
-
   void _handleNewMessage(Message message) {
-    if (message.channel == _selectedChannel?.id) {
+    if (message.channel == widget.channelId) {
       setState(() {
         _messages.insert(0, message);
       });
@@ -98,10 +89,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendMessage() async {
-    if (_messageController.text.isEmpty || _selectedChannel == null) return;
+    if (_messageController.text.isEmpty) return;
     
     final response = await widget.apiClient.sendMessage(
-      _selectedChannel!.id,
+      widget.channelId,
       _messageController.text,
     );
     
@@ -114,13 +105,13 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> _joinChannel(String channelId) async {
-    final response = await widget.apiClient.joinChannel(channelId);
+  void _leaveChannel() async {
+    final response = await widget.apiClient.leaveChannel(widget.channelId);
     if (response.success) {
-      await _loadChannels();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Канал присоединен')),
+        const SnackBar(content: Text('Покинули канал')),
       );
+      widget.onBack();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ошибка: ${response.error}')),
@@ -128,191 +119,56 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _show2FAManagement() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Управление 2FA'),
-        content: FutureBuilder<ApiResponse>(
-          future: widget.apiClient.get2FAStatus(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            
-            final enabled = snapshot.data?.data?['enabled'] == true;
-            
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('2FA: ${enabled ? 'Включена' : 'Выключена'}'),
-                const SizedBox(height: 20),
-                if (!enabled)
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _setup2FA();
-                    },
-                    child: const Text('Включить 2FA'),
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _disable2FA();
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                    child: const Text('Выключить 2FA'),
-                  ),
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Закрыть'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _setup2FA() {
-    // Логика настройки 2FA будет в AuthScreen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Настройка 2FA доступна на экране входа')),
-    );
-  }
-
-  void _disable2FA() {
-    final passwordController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Выключение 2FA'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Для выключения 2FA введите ваш пароль:'),
-            const SizedBox(height: 10),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Пароль',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final response = await widget.apiClient.disable2FA(passwordController.text);
-              if (response.success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('2FA выключена')),
-                );
-                Navigator.pop(context);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Ошибка: ${response.error}')),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Выключить'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showChannelDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Присоединиться к каналу'),
-        content: TextField(
-          controller: _channelJoinController,
-          decoration: const InputDecoration(hintText: 'ID канала'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final channelId = _channelJoinController.text.trim();
-              if (channelId.isNotEmpty) {
-                _joinChannel(channelId);
-                Navigator.pop(context);
-                _channelJoinController.clear();
-              }
-            },
-            child: const Text('Присоединиться'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedChannel?.name ?? 'Чат'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: widget.onBack,
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_channel?.name ?? 'Загрузка...'),
+            if (_channel != null)
+              Text(
+                'Участников: ${_channel!.memberCount}',
+                style: const TextStyle(fontSize: 12),
+              ),
+          ],
+        ),
         actions: [
           PopupMenuButton(
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: 'join_channel',
+                value: 'leave',
                 child: Row(
                   children: [
-                    Icon(Icons.add),
+                    Icon(Icons.exit_to_app),
                     SizedBox(width: 8),
-                    Text('Присоединиться к каналу'),
+                    Text('Покинуть канал'),
                   ],
                 ),
               ),
               const PopupMenuItem(
-                value: '2fa_management',
+                value: 'refresh',
                 child: Row(
                   children: [
-                    Icon(Icons.security),
+                    Icon(Icons.refresh),
                     SizedBox(width: 8),
-                    Text('Управление 2FA'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout),
-                    SizedBox(width: 8),
-                    Text('Выйти'),
+                    Text('Обновить'),
                   ],
                 ),
               ),
             ],
             onSelected: (value) {
               switch (value) {
-                case 'join_channel':
-                  _showChannelDialog();
+                case 'leave':
+                  _leaveChannel();
                   break;
-                case '2fa_management':
-                  _show2FAManagement();
-                  break;
-                case 'logout':
-                  widget.onLogout();
+                case 'refresh':
+                  _loadMessages();
                   break;
               }
             },
@@ -321,108 +177,136 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Row(
+          : Column(
               children: [
-                // Список каналов
-                Container(
-                  width: 200,
-                  decoration: const BoxDecoration(
-                    border: Border(right: BorderSide(color: Colors.grey)),
-                  ),
-                  child: ListView.builder(
-                    itemCount: _channels.length,
-                    itemBuilder: (context, index) {
-                      final channel = _channels[index];
-                      return ListTile(
-                        title: Text(channel.name),
-                        subtitle: Text('${channel.memberCount} участников'),
-                        selected: _selectedChannel?.id == channel.id,
-                        onTap: () {
-                          setState(() {
-                            _selectedChannel = channel;
-                          });
-                          _loadMessages();
-                        },
-                      );
-                    },
-                  ),
-                ),
-                // Чат
+                // Сообщения
                 Expanded(
-                  child: Column(
-                    children: [
-                      // Сообщения
-                      Expanded(
-                        child: _selectedChannel == null
-                            ? const Center(child: Text('Выберите канал'))
-                            : ListView.builder(
-                                reverse: true,
-                                itemCount: _messages.length,
-                                itemBuilder: (context, index) {
-                                  final message = _messages[index];
-                                  final isMe = message.from == widget.currentUser;
-                                  
-                                  return ListTile(
-                                    title: Row(
-                                      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: isMe ? Colors.blue.shade100 : Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                isMe ? 'Вы' : message.from,
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: isMe ? Colors.blue.shade800 : Colors.grey.shade800,
-                                                ),
-                                              ),
-                                              if (message.text.isNotEmpty) Text(message.text),
-                                              if (message.file != null)
-                                                Text('📎 ${message.file!.originalName}'),
-                                              if (message.voice != null)
-                                                Text('🎤 ${message.voice!.duration}сек'),
-                                              Text(
-                                                formatTime(message.ts),
-                                                style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                      // Поле ввода
-                      if (_selectedChannel != null)
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          child: Row(
+                  child: _messages.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _messageController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Введите сообщение...',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  onSubmitted: (_) => _sendMessage(),
-                                ),
+                              Icon(Icons.chat, size: 64, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text(
+                                'Нет сообщений',
+                                style: TextStyle(fontSize: 18, color: Colors.grey),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.send),
-                                onPressed: _sendMessage,
+                              SizedBox(height: 8),
+                              Text(
+                                'Будьте первым, кто напишет в этом канале!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey),
                               ),
                             ],
                           ),
+                        )
+                      : ListView.builder(
+                          reverse: true,
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            final message = _messages[index];
+                            final isMe = message.from == widget.currentUser;
+                            
+                            return Container(
+                              margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                              child: Row(
+                                mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                                children: [
+                                  Flexible(
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isMe ? Colors.blue.shade100 : Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          if (!isMe)
+                                            Text(
+                                              message.from,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.blue.shade800,
+                                              ),
+                                            ),
+                                          if (message.text.isNotEmpty) 
+                                            Text(message.text),
+                                          if (message.file != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 4),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.attach_file, size: 16),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    message.file!.originalName,
+                                                    style: const TextStyle(fontSize: 12),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          if (message.voice != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 4),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.mic, size: 16),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '${message.voice!.duration}сек',
+                                                    style: const TextStyle(fontSize: 12),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            formatTime(message.ts),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
+                ),
+                // Поле ввода
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    border: Border.top: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: const InputDecoration(
+                            hintText: 'Введите сообщение...',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.send),
+                        onPressed: _sendMessage,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
                     ],
                   ),
                 ),
