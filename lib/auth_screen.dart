@@ -29,11 +29,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   String? _pendingUsername;
   String? _pendingSessionId;
 
-  // 2FA настройка
-  bool _show2FASetup = false;
-  String? _twoFASecret;
-  final _setup2FAController = TextEditingController();
-
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -122,108 +117,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     }
   }
 
-  Future<void> _setup2FA() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final response = await widget.apiClient.setup2FA();
-      if (response.success) {
-        setState(() {
-          _show2FASetup = true;
-          _twoFASecret = response.data?['secret'];
-        });
-        _showSuccess('2FA настройка начата. Сохраните секретный ключ!');
-      } else {
-        _showError(response.error ?? 'Ошибка настройки 2FA');
-      }
-    } catch (e) {
-      _showError('Ошибка: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _enable2FA() async {
-    if (_setup2FAController.text.isEmpty) {
-      _showError('Введите код из приложения аутентификации');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      final response = await widget.apiClient.enable2FA(_setup2FAController.text);
-      if (response.success) {
-        setState(() {
-          _show2FASetup = false;
-          _twoFASecret = null;
-        });
-        _showSuccess('2FA успешно включена!');
-      } else {
-        _showError(response.error ?? 'Ошибка включения 2FA');
-      }
-    } catch (e) {
-      _showError('Ошибка: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Widget _build2FASetupDialog() {
-    return AlertDialog(
-      title: const Text('Настройка 2FA'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('1. Установите приложение аутентификации (Google Authenticator, Authy и т.д.)'),
-            const SizedBox(height: 10),
-            const Text('2. Добавьте новый аккаунт вручную:'),
-            const SizedBox(height: 5),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SelectableText(
-                  _twoFASecret ?? '',
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text('3. Введите код из приложения:'),
-            TextField(
-              controller: _setup2FAController,
-              decoration: const InputDecoration(
-                labelText: 'Код подтверждения',
-                hintText: '123456',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => setState(() {
-            _show2FASetup = false;
-            _twoFASecret = null;
-          }),
-          child: const Text('Отмена'),
-        ),
-        ElevatedButton(
-          onPressed: _enable2FA,
-          child: const Text('Включить 2FA'),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Чат'),
+        title: const Text('Вход в чат'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -232,97 +130,94 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  _isRegistering ? 'Регистрация' : 'Вход',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Имя пользователя',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Пароль',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                if (_show2FAField) ...[
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _twoFactorController,
-                    decoration: const InputDecoration(
-                      labelText: 'Код 2FA',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
-                const SizedBox(height: 20),
-                _isLoading
-                    ? const CircularProgressIndicator()
-                    : Column(
-                        children: [
-                          if (_show2FAField)
-                            ElevatedButton(
-                              onPressed: _verify2FA,
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(double.infinity, 50),
-                              ),
-                              child: const Text('Подтвердить 2FA'),
-                            )
-                          else
-                            ElevatedButton(
-                              onPressed: _handleAuth,
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(double.infinity, 50),
-                              ),
-                              child: Text(_isRegistering ? 'Зарегистрироваться' : 'Войти'),
-                            ),
-                          const SizedBox(height: 10),
-                          if (!_isRegistering && !_show2FAField)
-                            OutlinedButton(
-                              onPressed: _setup2FA,
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size(double.infinity, 50),
-                              ),
-                              child: const Text('Настроить 2FA'),
-                            ),
-                          const SizedBox(height: 10),
-                          TextButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () {
-                                    setState(() {
-                                      _isRegistering = !_isRegistering;
-                                      _show2FAField = false;
-                                      _show2FASetup = false;
-                                    });
-                                  },
-                            child: Text(_isRegistering
-                                ? 'Уже есть аккаунт? Войти'
-                                : 'Нет аккаунта? Зарегистрироваться'),
-                          ),
-                        ],
-                      ),
-              ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _isRegistering ? 'Регистрация' : 'Вход',
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
-          ),
-          if (_show2FASetup) _build2FASetupDialog(),
-        ],
+            const SizedBox(height: 20),
+            TextField(
+              controller: _usernameController,
+              decoration: const InputDecoration(
+                labelText: 'Имя пользователя',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Пароль',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            if (_show2FAField) ...[
+              const SizedBox(height: 10),
+              TextField(
+                controller: _twoFactorController,
+                decoration: const InputDecoration(
+                  labelText: 'Код 2FA',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Введите код из приложения аутентификации',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: 20),
+            _isLoading
+                ? const CircularProgressIndicator()
+                : Column(
+                    children: [
+                      if (_show2FAField)
+                        ElevatedButton(
+                          onPressed: _verify2FA,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          child: const Text('Подтвердить 2FA'),
+                        )
+                      else
+                        ElevatedButton(
+                          onPressed: _handleAuth,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          child: Text(_isRegistering ? 'Зарегистрироваться' : 'Войти'),
+                        ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                setState(() {
+                                  _isRegistering = !_isRegistering;
+                                  _show2FAField = false;
+                                });
+                              },
+                        child: Text(_isRegistering
+                            ? 'Уже есть аккаунт? Войти'
+                            : 'Нет аккаунта? Зарегистрироваться'),
+                      ),
+                    ],
+                  ),
+            const SizedBox(height: 20),
+            const Text(
+              'Это тестовая сборка! интерфейс в будущем может измениться',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
