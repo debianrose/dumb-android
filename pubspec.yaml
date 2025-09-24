@@ -1,27 +1,17 @@
 name: dumb_android
-description: Android Client
-
-publish_to: 'none'
-
+description: Flutter Client
 version: 1.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.29.2"
 
 dependencies:
   flutter:
     sdk: flutter
   http: ^1.1.0
-  audioplayers: ^5.2.1
-  permission_handler: ^11.0.1
-  record: ^5.0.1
-  path_provider: ^2.1.1
-  web_socket_channel: ^2.4.0
-  flutter_sound: ^9.2.13
-  file_picker: ^6.1.1
-  flutter_webrtc: ^0.9.48
-  sensors: ^2.0.2
-  connectivity_plus: ^5.0.1
+  web_socket_channel: ^3.0.0
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

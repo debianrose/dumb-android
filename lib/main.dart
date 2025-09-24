@@ -1,22 +1,6 @@
 import 'package:flutter/material.dart';
-import 'auth_screen.dart';
-import 'voice_service.dart';
+import 'app.dart';
 
 void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'DUMB Android',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: AuthScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  runApp(const ChatApp());
 }
