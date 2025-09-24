@@ -23,7 +23,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final WebSocketClient _wsClient = WebSocketClient();
+  late WebSocketClient _wsClient;
   final _messageController = TextEditingController();
   
   List<Message> _messages = [];
@@ -33,6 +33,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _wsClient = WebSocketClient();
     _initializeChat();
   }
 
@@ -42,7 +43,7 @@ class _ChatScreenState extends State<ChatScreen> {
     
     final token = await getStoredToken();
     if (token != null) {
-      _wsClient.connect(token);
+      await _wsClient.connect(token);
       _wsClient.messageStream.listen(_handleNewMessage);
     }
     
@@ -50,33 +51,45 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _loadChannelInfo() async {
-    final response = await widget.apiClient.getChannels();
-    if (response.success) {
-      final channels = (response.data?['channels'] as List?)
-          ?.map((json) => Channel.fromJson(json))
-          .toList() ?? [];
-      
-      _channel = channels.firstWhere(
-        (channel) => channel.id == widget.channelId,
-        orElse: () => Channel(
-          id: widget.channelId,
-          name: 'Неизвестный канал',
-          createdBy: 'Неизвестно',
-          createdAt: 0,
-          memberCount: 0,
-        ),
-      );
+    try {
+      final response = await widget.apiClient.getChannels();
+      if (response.success) {
+        final channels = (response.data?['channels'] as List?)
+            ?.map((json) => Channel.fromJson(json))
+            .toList() ?? [];
+        
+        final channel = channels.firstWhere(
+          (channel) => channel.id == widget.channelId,
+          orElse: () => Channel(
+            id: widget.channelId,
+            name: 'Неизвестный канал',
+            createdBy: 'Неизвестно',
+            createdAt: 0,
+            memberCount: 0,
+          ),
+        );
+        
+        setState(() {
+          _channel = channel;
+        });
+      }
+    } catch (e) {
+      print('Error loading channel info: $e');
     }
   }
 
   Future<void> _loadMessages() async {
-    final response = await widget.apiClient.getMessages(widget.channelId);
-    if (response.success) {
-      setState(() {
-        _messages = (response.data?['messages'] as List?)
-            ?.map((json) => Message.fromJson(json))
-            .toList() ?? [];
-      });
+    try {
+      final response = await widget.apiClient.getMessages(widget.channelId);
+      if (response.success) {
+        setState(() {
+          _messages = (response.data?['messages'] as List?)
+              ?.map((json) => Message.fromJson(json))
+              .toList() ?? [];
+        });
+      }
+    } catch (e) {
+      print('Error loading messages: $e');
     }
   }
 
@@ -91,30 +104,42 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     if (_messageController.text.isEmpty) return;
     
-    final response = await widget.apiClient.sendMessage(
-      widget.channelId,
-      _messageController.text,
-    );
-    
-    if (response.success) {
-      _messageController.clear();
-    } else {
+    try {
+      final response = await widget.apiClient.sendMessage(
+        widget.channelId,
+        _messageController.text,
+      );
+      
+      if (response.success) {
+        _messageController.clear();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: ${response.error}')),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: ${response.error}')),
+        SnackBar(content: Text('Ошибка отправки: $e')),
       );
     }
   }
 
   void _leaveChannel() async {
-    final response = await widget.apiClient.leaveChannel(widget.channelId);
-    if (response.success) {
+    try {
+      final response = await widget.apiClient.leaveChannel(widget.channelId);
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Покинули канал')),
+        );
+        widget.onBack();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: ${response.error}')),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Покинули канал')),
-      );
-      widget.onBack();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: ${response.error}')),
+        SnackBar(content: Text('Ошибка: $e')),
       );
     }
   }
@@ -169,6 +194,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   break;
                 case 'refresh':
                   _loadMessages();
+                  _loadChannelInfo();
                   break;
               }
             },
@@ -179,7 +205,6 @@ class _ChatScreenState extends State<ChatScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Сообщения
                 Expanded(
                   child: _messages.isEmpty
                       ? const Center(
@@ -279,7 +304,6 @@ class _ChatScreenState extends State<ChatScreen> {
                           },
                         ),
                 ),
-                // Поле ввода
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
