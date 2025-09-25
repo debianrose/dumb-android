@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_client.dart';
 import 'utils.dart';
+import 'l10n/app_localizations.dart';
 
 class ServerConfigScreen extends StatefulWidget {
   final ApiClient apiClient;
@@ -41,32 +42,31 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
 
   Future<void> _testConnection() async {
     setState(() {
-      _connectionStatus = 'Проверка соединения...';
+      _connectionStatus = AppLocalizations.of(context).loading;
     });
 
     try {
-      // Простая проверка доступности сервера
       final testResponse = await widget.apiClient.getUsers();
       
       if (testResponse.success) {
         setState(() {
-          _connectionStatus = '✓ Соединение установлено';
+          _connectionStatus = '✓ ${AppLocalizations.of(context).success}';
         });
       } else {
         setState(() {
-          _connectionStatus = '✗ Ошибка: ${testResponse.error}';
+          _connectionStatus = '✗ ${AppLocalizations.of(context).error}: ${testResponse.error}';
         });
       }
     } catch (e) {
       setState(() {
-        _connectionStatus = '✗ Ошибка соединения: $e';
+        _connectionStatus = '✗ ${AppLocalizations.of(context).error}: $e';
       });
     }
   }
 
   Future<void> _saveConfig() async {
     if (_ipController.text.isEmpty || _portController.text.isEmpty) {
-      _showError('Заполните IP и порт');
+      _showError('${AppLocalizations.of(context).error}');
       return;
     }
 
@@ -79,11 +79,10 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
       );
 
       await _testConnection();
-
-      _showSuccess('Настройки сохранены!');
+      _showSuccess(AppLocalizations.of(context).success);
       widget.onConfigSaved();
     } catch (e) {
-      _showError('Ошибка: $e');
+      _showError('${AppLocalizations.of(context).error}: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -91,13 +90,21 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -124,14 +131,16 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Настройки сервера'),
+        title: Text(loc.serverSettings),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            widget.onConfigSaved();
-          },
+          onPressed: widget.onConfigSaved,
         ),
       ),
       body: Padding(
@@ -145,111 +154,151 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Текущие настройки:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Text(
+                      loc.currentSettings,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.link, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _currentUrl,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
-                    Text('URL: $_currentUrl'),
-                    const SizedBox(height: 8),
-                    Text(
-                      _connectionStatus,
-                      style: TextStyle(
-                        color: _connectionStatus.contains('✓') 
-                            ? Colors.green 
-                            : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 12,
+                          color: _connectionStatus.contains('✓') 
+                              ? Colors.green 
+                              : colorScheme.error,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _connectionStatus,
+                            style: TextStyle(
+                              color: _connectionStatus.contains('✓') 
+                                  ? Colors.green 
+                                  : colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             TextField(
               controller: _ipController,
-              decoration: const InputDecoration(
-                labelText: 'IP адрес сервера',
-                border: OutlineInputBorder(),
-                hintText: '192.168.1.100 или 10.0.2.2',
+              decoration: InputDecoration(
+                labelText: loc.serverIp,
+                prefixIcon: const Icon(Icons.computer),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _portController,
-              decoration: const InputDecoration(
-                labelText: 'Порт сервера',
-                border: OutlineInputBorder(),
-                hintText: '3000',
+              decoration: InputDecoration(
+                labelText: loc.serverPort,
+                prefixIcon: const Icon(Icons.numbers),
               ),
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Быстрые настройки:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            const SizedBox(height: 24),
+            Text(
+              loc.quickSettings,
+              style: theme.textTheme.titleMedium,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                ElevatedButton(
-                  onPressed: _useLocalhost,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade100,
-                    foregroundColor: Colors.blue.shade800,
-                  ),
-                  child: const Text('Android эмулятор'),
+                FilterChip(
+                  label: Text(loc.androidEmulator),
+                  onSelected: (_) => _useLocalhost(),
                 ),
-                ElevatedButton(
-                  onPressed: _useLocalhostIPv4,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade100,
-                    foregroundColor: Colors.green.shade800,
-                  ),
-                  child: const Text('Локальный хост'),
+                FilterChip(
+                  label: Text(loc.localhost),
+                  onSelected: (_) => _useLocalhostIPv4(),
                 ),
-                ElevatedButton(
-                  onPressed: _useLocalNetwork,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange.shade100,
-                    foregroundColor: Colors.orange.shade800,
-                  ),
-                  child: const Text('Локальная сеть'),
+                FilterChip(
+                  label: Text(loc.localNetwork),
+                  onSelected: (_) => _useLocalNetwork(),
                 ),
-                ElevatedButton(
-                  onPressed: _testConnection,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple.shade100,
-                    foregroundColor: Colors.purple.shade800,
-                  ),
-                  child: const Text('Проверить связь'),
+                FilterChip(
+                  label: Text(loc.testConnection),
+                  onSelected: (_) => _testConnection(),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton(
+                : FilledButton(
                     onPressed: _saveConfig,
-                    style: ElevatedButton.styleFrom(
+                    style: FilledButton.styleFrom(
                       minimumSize: const Size(double.infinity, 50),
                     ),
-                    child: const Text('Сохранить настройки'),
+                    child: Text(loc.saveSettings),
                   ),
-            const SizedBox(height: 20),
-            const Text(
-              'Подсказки:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            const SizedBox(height: 24),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.hints,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildHintItem('Android:', '10.0.2.2:3000'),
+                    _buildHintItem('Localhost:', '127.0.0.1:3000'),
+                    _buildHintItem('WiFi:', 'IP:3000'),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
-            const Text('• Для Android эмулятора: 10.0.2.2:3000'),
-            const Text('• Для локального хоста: 127.0.0.1:3000'),
-            const Text('• Для телефона в WiFi: IP компьютера:3000'),
-            const Text('• Убедитесь, что сервер запущен и доступен'),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHintItem(String title, String description) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('• '),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: Theme.of(context).textTheme.bodyMedium,
+                children: [
+                  TextSpan(text: '$title ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  TextSpan(text: description),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

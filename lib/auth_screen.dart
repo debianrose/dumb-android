@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_client.dart';
 import 'models.dart';
+import 'l10n/app_localizations.dart';
 
 class AuthScreen extends StatefulWidget {
   final ApiClient apiClient;
@@ -33,7 +34,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -54,28 +55,28 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     final password = _passwordController.text.trim();
 
     if (username.isEmpty) {
-      _showError('Введите имя пользователя');
+      _showError('${AppLocalizations.of(context).error}: ${AppLocalizations.of(context).username}');
       return false;
     }
 
     if (password.isEmpty) {
-      _showError('Введите пароль');
+      _showError('${AppLocalizations.of(context).error}: ${AppLocalizations.of(context).password}');
       return false;
     }
 
     if (username.length < 3) {
-      _showError('Имя пользователя должно быть не менее 3 символов');
+      _showError('${AppLocalizations.of(context).username} 3+');
       return false;
     }
 
     if (password.length < 6) {
-      _showError('Пароль должен быть не менее 6 символов');
+      _showError('${AppLocalizations.of(context).password} 6+');
       return false;
     }
 
     final usernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');
     if (!usernameRegex.hasMatch(username)) {
-      _showError('Имя пользователя может содержать только буквы, цифры и подчеркивания');
+      _showError('${AppLocalizations.of(context).username} a-z, 0-9, _');
       return false;
     }
 
@@ -105,7 +106,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
       if (response.success) {
         if (_isRegistering) {
-          _showSuccess('Регистрация успешна! Теперь войдите.');
+          _showSuccess('${AppLocalizations.of(context).success}!');
           setState(() {
             _isRegistering = false;
             _passwordController.clear();
@@ -122,10 +123,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           }
         }
       } else {
-        _showError(response.error ?? 'Ошибка авторизации');
+        _showError(response.error ?? '${AppLocalizations.of(context).error}');
       }
     } catch (e) {
-      _showError('Ошибка соединения: $e');
+      _showError('${AppLocalizations.of(context).error}: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -133,7 +134,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   Future<void> _verify2FA() async {
     if (_twoFactorController.text.isEmpty) {
-      _showError('Введите код 2FA');
+      _showError(AppLocalizations.of(context).enterTwoFactorCode);
       return;
     }
 
@@ -149,10 +150,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       if (response.success) {
         widget.onLogin(_pendingUsername!, response.data?['token']);
       } else {
-        _showError(response.error ?? 'Ошибка верификации 2FA');
+        _showError(response.error ?? '${AppLocalizations.of(context).error}');
       }
     } catch (e) {
-      _showError('Ошибка соединения: $e');
+      _showError('${AppLocalizations.of(context).error}: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -160,188 +161,126 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DUMB Androif'),
-        backgroundColor: Colors.blue.shade800,
-        foregroundColor: Colors.white,
+        title: Text(loc.appTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: widget.onConfigPressed,
-            tooltip: 'Настройки сервера',
+            tooltip: loc.settings,
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
-          ),
-        ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 64,
+                  color: colorScheme.primary,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 64,
-                        color: Colors.blue.shade800,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _isRegistering ? 'Регистрация' : 'DUMB',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      TextField(
-                        controller: _usernameController,
-                        decoration: InputDecoration(
-                          labelText: 'Имя пользователя',
-                          prefixIcon: const Icon(Icons.person),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          hintText: 'от 3 символов, только буквы/цифры',
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: 'Пароль',
-                          prefixIcon: const Icon(Icons.lock),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          hintText: _isRegistering ? 'не менее 6 символов' : '',
-                        ),
-                      ),
-                      if (_show2FAField) ...[
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _twoFactorController,
-                          decoration: InputDecoration(
-                            labelText: 'Код 2FA',
-                            prefixIcon: const Icon(Icons.security),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Введите код из приложения аутентификации',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                      const SizedBox(height: 24),
-                      _isLoading
-                          ? const CircularProgressIndicator()
-                          : Column(
-                              children: [
-                                if (_show2FAField)
-                                  ElevatedButton(
-                                    onPressed: _verify2FA,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue.shade800,
-                                      foregroundColor: Colors.white,
-                                      minimumSize: const Size(double.infinity, 50),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: const Text('Подтвердить 2FA'),
-                                  )
-                                else
-                                  ElevatedButton(
-                                    onPressed: _handleAuth,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue.shade800,
-                                      foregroundColor: Colors.white,
-                                      minimumSize: const Size(double.infinity, 50),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: Text(_isRegistering ? 'Зарегистрироваться' : 'Войти'),
-                                  ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _isLoading
-                                      ? null
-                                      : () {
-                                          setState(() {
-                                            _isRegistering = !_isRegistering;
-                                            _show2FAField = false;
-                                            _usernameController.clear();
-                                            _passwordController.clear();
-                                            _twoFactorController.clear();
-                                          });
-                                        },
-                                  child: Text(
-                                    _isRegistering
-                                        ? 'Уже есть аккаунт? Войти'
-                                        : 'Нет аккаунта? Зарегистрироваться',
-                                    style: TextStyle(color: Colors.blue.shade800),
-                                  ),
-                                ),
-                              ],
-                            ),
-                      const SizedBox(height: 16),
-                      if (_isRegistering) 
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: const Text(
-                            'Требования:\n• Имя пользователя: от 3 символов (только буквы, цифры, _)\n• Пароль: не менее 6 символов',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                            textAlign: TextAlign.center,
-                          ),
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          child: const Text(
-                            'ТЕСТОВАЯ ВЕРСИЯ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                    ],
+                const SizedBox(height: 24),
+                Text(
+                  _isRegistering ? loc.register : loc.login,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
+                const SizedBox(height: 32),
+                TextField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: loc.username,
+                    prefixIcon: const Icon(Icons.person_outline),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: loc.password,
+                    prefixIcon: const Icon(Icons.lock_outline),
+                  ),
+                ),
+                if (_show2FAField) ...[
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _twoFactorController,
+                    decoration: InputDecoration(
+                      labelText: loc.twoFactorCode,
+                      prefixIcon: const Icon(Icons.security),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+                const SizedBox(height: 24),
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : Column(
+                        children: [
+                          if (_show2FAField)
+                            FilledButton(
+                              onPressed: _verify2FA,
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                              child: Text(loc.verify),
+                            )
+                          else
+                            FilledButton(
+                              onPressed: _handleAuth,
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                              child: Text(_isRegistering ? loc.register : loc.login),
+                            ),
+                          const SizedBox(height: 16),
+                          TextButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _isRegistering = !_isRegistering;
+                                      _show2FAField = false;
+                                      _usernameController.clear();
+                                      _passwordController.clear();
+                                      _twoFactorController.clear();
+                                    });
+                                  },
+                            child: Text(
+                              _isRegistering
+                                  ? '${loc.login}?'
+                                  : '${loc.register}?',
+                            ),
+                          ),
+                        ],
+                      ),
+                const SizedBox(height: 24),
+                if (_isRegistering) 
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Requirements:\n• ${loc.username}: 3+ chars (a-z, 0-9, _)\n• ${loc.password}: 6+ chars',
+                      style: theme.textTheme.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

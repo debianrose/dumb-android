@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_client.dart';
 import 'models.dart';
+import 'l10n/app_localizations.dart';
 
 class ChannelSelectScreen extends StatefulWidget {
   final ApiClient apiClient;
@@ -46,9 +47,6 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
     try {
       final response = await widget.apiClient.getChannels();
       
-      print('Channels response: ${response.success}');
-      print('Channels data: ${response.data}');
-      
       if (response.success) {
         final channelsData = response.data?['channels'] as List?;
         if (channelsData != null) {
@@ -57,11 +55,10 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
           for (var item in channelsData) {
             try {
               if (item is Map<String, dynamic>) {
-                print('Channel data: $item');
                 loadedChannels.add(Channel.fromJson(item));
               }
             } catch (e) {
-              print('Error parsing channel: $e, data: $item');
+              print('Error parsing channel: $e');
             }
           }
           
@@ -69,8 +66,6 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
             _channels = loadedChannels;
             _isLoading = false;
           });
-          
-          print('Loaded ${_channels.length} channels');
         } else {
           setState(() {
             _channels = [];
@@ -79,13 +74,13 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
         }
       } else {
         setState(() {
-          _errorMessage = response.error ?? 'Ошибка загрузки каналов';
+          _errorMessage = response.error ?? AppLocalizations.of(context).connectionError;
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Ошибка соединения: $e';
+        _errorMessage = '${AppLocalizations.of(context).error}: $e';
         _isLoading = false;
       });
     }
@@ -95,43 +90,29 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
     final channelName = _channelNameController.text.trim();
     
     if (channelName.isEmpty) {
-      _showError('Введите название канала');
+      _showError(AppLocalizations.of(context).channelName);
       return;
     }
 
-    setState(() {
-      _isCreatingChannel = true;
-    });
+    setState(() => _isCreatingChannel = true);
 
     try {
       final response = await widget.apiClient.createChannel(channelName);
       
-      setState(() {
-        _isCreatingChannel = false;
-      });
+      setState(() => _isCreatingChannel = false);
 
       if (response.success) {
-        _showSuccess('Канал "$channelName" создан!');
+        _showSuccess('${AppLocalizations.of(context).success}!');
         _channelNameController.clear();
-        
-        // Ждем немного перед обновлением списка
         await Future.delayed(const Duration(milliseconds: 500));
-        
-        // Перезагружаем каналы
         await _loadChannels();
-        
-        // Закрываем диалог только после успешной загрузки
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
+        if (mounted) Navigator.of(context).pop();
       } else {
-        _showError('Ошибка создания канала: ${response.error}');
+        _showError('${AppLocalizations.of(context).error}: ${response.error}');
       }
     } catch (e) {
-      setState(() {
-        _isCreatingChannel = false;
-      });
-      _showError('Ошибка: $e');
+      setState(() => _isCreatingChannel = false);
+      _showError('${AppLocalizations.of(context).error}: $e');
     }
   }
 
@@ -139,262 +120,269 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
     final channelName = _joinChannelController.text.trim();
     
     if (channelName.isEmpty) {
-      _showError('Введите название канала');
+      _showError(AppLocalizations.of(context).channelName);
       return;
     }
 
-    setState(() {
-      _isJoiningChannel = true;
-    });
+    setState(() => _isJoiningChannel = true);
 
     try {
       final response = await widget.apiClient.joinChannel(channelName);
       
-      setState(() {
-        _isJoiningChannel = false;
-      });
+      setState(() => _isJoiningChannel = false);
 
       if (response.success) {
-        _showSuccess('Присоединились к каналу "$channelName"!');
+        _showSuccess('${AppLocalizations.of(context).success}!');
         _joinChannelController.clear();
         if (mounted) {
           Navigator.of(context).pop();
           await _loadChannels();
         }
       } else {
-        _showError('Ошибка присоединения: ${response.error}');
+        _showError('${AppLocalizations.of(context).error}: ${response.error}');
       }
     } catch (e) {
-      setState(() {
-        _isJoiningChannel = false;
-      });
-      _showError('Ошибка: $e');
+      setState(() => _isJoiningChannel = false);
+      _showError('${AppLocalizations.of(context).error}: $e');
     }
   }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   void _showCreateChannelDialog() {
+    final loc = AppLocalizations.of(context);
+    
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: const Text('Создать канал'),
-            content: TextField(
-              controller: _channelNameController,
-              decoration: const InputDecoration(
-                hintText: 'Название канала',
-                border: OutlineInputBorder(),
-              ),
-              onSubmitted: (_) => _createChannel(),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Отмена'),
-              ),
-              ElevatedButton(
-                onPressed: _isCreatingChannel ? null : _createChannel,
-                child: _isCreatingChannel 
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Создать'),
-              ),
-            ],
-          );
-        },
+      builder: (context) => AlertDialog(
+        title: Text(loc.createChannel),
+        content: TextField(
+          controller: _channelNameController,
+          decoration: InputDecoration(
+            labelText: loc.channelName,
+          ),
+          onSubmitted: (_) => _createChannel(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(loc.cancel),
+          ),
+          FilledButton(
+            onPressed: _isCreatingChannel ? null : _createChannel,
+            child: _isCreatingChannel 
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(loc.createChannel),
+          ),
+        ],
       ),
     );
   }
 
   void _showJoinChannelDialog() {
+    final loc = AppLocalizations.of(context);
+    
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: const Text('Присоединиться к каналу'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _joinChannelController,
-                  decoration: const InputDecoration(
-                    hintText: 'Название или ID канала',
-                    border: OutlineInputBorder(),
-                  ),
-                  onSubmitted: (_) => _joinChannelByName(),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Отмена'),
-              ),
-              ElevatedButton(
-                onPressed: _isJoiningChannel ? null : _joinChannelByName,
-                child: _isJoiningChannel
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Присоединиться'),
-              ),
-            ],
-          );
-        },
+      builder: (context) => AlertDialog(
+        title: Text(loc.joinChannel),
+        content: TextField(
+          controller: _joinChannelController,
+          decoration: InputDecoration(
+            labelText: loc.channelName,
+          ),
+          onSubmitted: (_) => _joinChannelByName(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(loc.cancel),
+          ),
+          FilledButton(
+            onPressed: _isJoiningChannel ? null : _joinChannelByName,
+            child: _isJoiningChannel
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(loc.joinChannel),
+          ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Каналы'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: widget.onConfigPressed,
-              tooltip: 'Настройки сервера',
-            ),
-            PopupMenuButton(
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'refresh',
-                  child: Row(
+    final loc = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(loc.channels),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: widget.onConfigPressed,
+            tooltip: loc.settings,
+          ),
+          PopupMenuButton(
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    const Icon(Icons.refresh),
+                    const SizedBox(width: 12),
+                    Text(loc.refresh),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    const Icon(Icons.logout),
+                    const SizedBox(width: 12),
+                    Text(loc.logout),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) {
+              switch (value) {
+                case 'refresh':
+                  _loadChannels();
+                  break;
+                case 'logout':
+                  widget.onLogout();
+                  break;
+              }
+            },
+          ),
+        ],
+      ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'join_fab',
+            onPressed: _showJoinChannelDialog,
+            mini: true,
+            child: const Icon(Icons.group_add),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'create_fab',
+            onPressed: _showCreateChannelDialog,
+            child: const Icon(Icons.add),
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.refresh),
-                      SizedBox(width: 8),
-                      Text('Обновить список'),
+                      Icon(Icons.error_outline, size: 64, color: colorScheme.error),
+                      const SizedBox(height: 16),
+                      Text(
+                        _errorMessage!,
+                        style: TextStyle(color: colorScheme.error),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      FilledButton(
+                        onPressed: _loadChannels,
+                        child: Text(loc.retry),
+                      ),
                     ],
                   ),
-                ),
-                const PopupMenuItem(
-                  value: 'logout',
-                  child: Row(
-                    children: [
-                      Icon(Icons.logout),
-                      SizedBox(width: 8),
-                      Text('Выйти'),
-                    ],
-                  ),
-                ),
-              ],
-              onSelected: (value) {
-                switch (value) {
-                  case 'refresh':
-                    _loadChannels();
-                    break;
-                  case 'logout':
-                    widget.onLogout();
-                    break;
-                }
-              },
-            ),
-          ],
-        ),
-        floatingActionButton: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            FloatingActionButton(
-              heroTag: 'join_fab',
-              onPressed: _showJoinChannelDialog,
-              mini: true,
-              child: const Icon(Icons.group_add),
-            ),
-            const SizedBox(height: 10),
-            FloatingActionButton(
-              heroTag: 'create_fab',
-              onPressed: _showCreateChannelDialog,
-              child: const Icon(Icons.add),
-            ),
-          ],
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _errorMessage != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error, size: 64, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text(
-                          _errorMessage!,
-                          style: const TextStyle(fontSize: 16, color: Colors.red),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _loadChannels,
-                          child: const Text('Повторить'),
-                        ),
-                      ],
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _loadChannels,
-                    child: _channels.isEmpty
-                        ? SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.8,
-                              child: const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.group, size: 64, color: Colors.grey),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'Нет доступных каналов',
-                                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadChannels,
+                  child: _channels.isEmpty
+                      ? SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.8,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.chat_bubble_outline, size: 64, color: colorScheme.outline),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    loc.noChannelsAvailable,
+                                    style: theme.textTheme.headlineSmall,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '${loc.createChannel} ${loc.joinChannel.toLowerCase()}',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.outline,
                                     ),
-                                  ],
-                                ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
                             ),
-                          )
-                        : ListView.builder(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            itemCount: _channels.length,
-                            itemBuilder: (context, index) {
-                              final channel = _channels[index];
-                              return Card(
-                                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                child: ListTile(
-                                  leading: const Icon(Icons.chat),
-                                  title: Text(channel.name),
-                                  subtitle: Text(
-                                    'Создал: ${channel.createdBy}\n'
-                                    'Участников: ${channel.memberCount}',
-                                  ),
-                                  trailing: const Icon(Icons.arrow_forward_ios),
-                                  onTap: () => widget.onChannelSelected(channel.id),
-                                ),
-                              );
-                            },
                           ),
-                  ),
-      ),
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _channels.length,
+                          itemBuilder: (context, index) {
+                            final channel = _channels[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              child: ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primaryContainer,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.chat, color: colorScheme.onPrimaryContainer),
+                                ),
+                                title: Text(channel.name),
+                                subtitle: Text(
+                                  '${loc.createdBy}: ${channel.createdBy}\n'
+                                  '${channel.memberCount} ${loc.members}',
+                                ),
+                                trailing: const Icon(Icons.arrow_forward_ios),
+                                onTap: () => widget.onChannelSelected(channel.id),
+                              ),
+                            );
+                          },
+                        ),
+                ),
     );
   }
 }
