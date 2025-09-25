@@ -15,7 +15,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'DUMB Android',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
       ),
       localizationsDelegates: const [
@@ -25,7 +35,8 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('en', ''), // English
+        Locale('en', ''),
+        Locale('ru', ''),
       ],
       home: const ChatApp(),
       debugShowCheckedModeBanner: false,

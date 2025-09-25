@@ -162,7 +162,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Вход в чат'),
+        title: const Text('DUMB Androif'),
         backgroundColor: Colors.blue.shade800,
         foregroundColor: Colors.white,
         actions: [
@@ -206,7 +206,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        _isRegistering ? 'Регистрация' : 'Вход в чат',
+                        _isRegistering ? 'Регистрация' : 'DUMB',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,

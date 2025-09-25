@@ -1,5 +1,5 @@
 {
-  "@@locale": "%two_letters_code%",
+  "@@locale": "en",
   "appTitle": "DUMB Android",
   "login": "Login",
   "register": "Register",
