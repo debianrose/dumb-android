@@ -1,5 +1,9 @@
 files:
   - source: /lib/l10n/arb/app_en.arb
+<<<<<<< HEAD
     translation: /lib/l10n/arb/app_%locale%.arb
 bundles:
   - 3
+=======
+    translation: /lib/l10n/arb/app_%two_letters_code%.arb
+>>>>>>> 23c498a (updated crowdin config)
