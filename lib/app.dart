@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'auth_screen.dart';
 import 'channel_select_screen.dart';
 import 'chat_screen.dart';
 import 'server_config_screen.dart';
 import 'api_client.dart';
 import 'utils.dart';
+import 'l10n/app_localizations.dart';
 
 class ChatApp extends StatefulWidget {
   const ChatApp({super.key});
@@ -32,7 +34,6 @@ class _ChatAppState extends State<ChatApp> {
       
       final token = await getStoredToken();
       if (token != null) {
-        // Устанавливаем токен в API клиент
         _apiClient.setToken(token);
         
         final user = await _apiClient.validateToken(token);
@@ -41,7 +42,6 @@ class _ChatAppState extends State<ChatApp> {
             _currentUser = user;
           });
         } else {
-          // Токен невалидный - очищаем
           await clearStoredToken();
         }
       }
@@ -58,7 +58,6 @@ class _ChatAppState extends State<ChatApp> {
     setState(() {
       _currentUser = user;
     });
-    // Токен уже сохранен в apiClient.login()
   }
 
   void _onLogout() {
@@ -79,7 +78,7 @@ class _ChatAppState extends State<ChatApp> {
     setState(() {
       _showServerConfig = false;
     });
-    _initializeApp(); // Перезагружаем данные после изменения настроек
+    _initializeApp();
   }
 
   void _onChannelSelected(String channelId) {
@@ -94,18 +93,27 @@ class _ChatAppState extends State<ChatApp> {
     });
   }
 
+  Widget _buildLocalizedApp(Widget home) {
+    return MaterialApp(
+      home: home,
+      debugShowCheckedModeBanner: false,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isInitializing) {
-      return const MaterialApp(
-        home: Scaffold(
+      return _buildLocalizedApp(
+        Scaffold(
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 20),
-                Text('Загрузка...'),
+                Text('Loading...'),
               ],
             ),
           ),
@@ -114,8 +122,8 @@ class _ChatAppState extends State<ChatApp> {
     }
 
     if (_showServerConfig) {
-      return MaterialApp(
-        home: ServerConfigScreen(
+      return _buildLocalizedApp(
+        ServerConfigScreen(
           apiClient: _apiClient,
           onConfigSaved: _hideServerConfigScreen,
         ),
@@ -123,8 +131,8 @@ class _ChatAppState extends State<ChatApp> {
     }
 
     if (_currentUser == null) {
-      return MaterialApp(
-        home: AuthScreen(
+      return _buildLocalizedApp(
+        AuthScreen(
           apiClient: _apiClient,
           onLogin: _onLogin,
           onConfigPressed: _showServerConfigScreen,
@@ -133,8 +141,8 @@ class _ChatAppState extends State<ChatApp> {
     }
 
     if (_selectedChannelId != null) {
-      return MaterialApp(
-        home: ChatScreen(
+      return _buildLocalizedApp(
+        ChatScreen(
           apiClient: _apiClient,
           currentUser: _currentUser!,
           channelId: _selectedChannelId!,
@@ -143,8 +151,8 @@ class _ChatAppState extends State<ChatApp> {
       );
     }
 
-    return MaterialApp(
-      home: ChannelSelectScreen(
+    return _buildLocalizedApp(
+      ChannelSelectScreen(
         apiClient: _apiClient,
         currentUser: _currentUser!,
         onLogout: _onLogout,

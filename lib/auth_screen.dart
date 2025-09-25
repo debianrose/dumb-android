@@ -55,28 +55,28 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     final password = _passwordController.text.trim();
 
     if (username.isEmpty) {
-      _showError('${AppLocalizations.of(context).error}: ${AppLocalizations.of(context).username}');
+      _showError('Please enter username');
       return false;
     }
 
     if (password.isEmpty) {
-      _showError('${AppLocalizations.of(context).error}: ${AppLocalizations.of(context).password}');
+      _showError('Please enter password');
       return false;
     }
 
     if (username.length < 3) {
-      _showError('${AppLocalizations.of(context).username} 3+');
+      _showError('Username must be at least 3 characters');
       return false;
     }
 
     if (password.length < 6) {
-      _showError('${AppLocalizations.of(context).password} 6+');
+      _showError('Password must be at least 6 characters');
       return false;
     }
 
     final usernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');
     if (!usernameRegex.hasMatch(username)) {
-      _showError('${AppLocalizations.of(context).username} a-z, 0-9, _');
+      _showError('Username can only contain letters, numbers and underscores');
       return false;
     }
 
@@ -106,7 +106,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
       if (response.success) {
         if (_isRegistering) {
-          _showSuccess('${AppLocalizations.of(context).success}!');
+          _showSuccess('Registration successful! Please login.');
           setState(() {
             _isRegistering = false;
             _passwordController.clear();
@@ -119,14 +119,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               _pendingSessionId = response.data?['sessionId'];
             });
           } else {
-            widget.onLogin(_usernameController.text.trim(), response.data?['token']);
+            final token = response.data?['token'] ?? '';
+            widget.onLogin(_usernameController.text.trim(), token);
           }
         }
       } else {
-        _showError(response.error ?? '${AppLocalizations.of(context).error}');
+        _showError(response.error ?? 'Authentication error');
       }
     } catch (e) {
-      _showError('${AppLocalizations.of(context).error}: $e');
+      _showError('Connection error: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -134,7 +135,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   Future<void> _verify2FA() async {
     if (_twoFactorController.text.isEmpty) {
-      _showError(AppLocalizations.of(context).enterTwoFactorCode);
+      _showError('Please enter 2FA code');
+      return;
+    }
+
+    if (_pendingUsername == null || _pendingSessionId == null) {
+      _showError('Session expired. Please try again.');
       return;
     }
 
@@ -148,12 +154,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       );
 
       if (response.success) {
-        widget.onLogin(_pendingUsername!, response.data?['token']);
+        final token = response.data?['token'] ?? '';
+        widget.onLogin(_pendingUsername!, token);
       } else {
-        _showError(response.error ?? '${AppLocalizations.of(context).error}');
+        _showError(response.error ?? '2FA verification failed');
       }
     } catch (e) {
-      _showError('${AppLocalizations.of(context).error}: $e');
+      _showError('Connection error: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -167,12 +174,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc.appTitle),
+        title: Text(loc?.appTitle ?? 'DUMB Android'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: widget.onConfigPressed,
-            tooltip: loc.settings,
+            tooltip: loc?.settings ?? 'Settings',
           ),
         ],
       ),
@@ -191,7 +198,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  _isRegistering ? loc.register : loc.login,
+                  _isRegistering ? 'Register' : 'Login',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -200,7 +207,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                 TextField(
                   controller: _usernameController,
                   decoration: InputDecoration(
-                    labelText: loc.username,
+                    labelText: loc?.username ?? 'Username',
                     prefixIcon: const Icon(Icons.person_outline),
                   ),
                 ),
@@ -209,7 +216,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                   controller: _passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
-                    labelText: loc.password,
+                    labelText: loc?.password ?? 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                   ),
                 ),
@@ -217,9 +224,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                   const SizedBox(height: 16),
                   TextField(
                     controller: _twoFactorController,
-                    decoration: InputDecoration(
-                      labelText: loc.twoFactorCode,
-                      prefixIcon: const Icon(Icons.security),
+                    decoration: const InputDecoration(
+                      labelText: '2FA Code',
+                      prefixIcon: Icon(Icons.security),
                     ),
                     keyboardType: TextInputType.number,
                   ),
@@ -235,7 +242,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                               style: FilledButton.styleFrom(
                                 minimumSize: const Size(double.infinity, 50),
                               ),
-                              child: Text(loc.verify),
+                              child: const Text('Verify'),
                             )
                           else
                             FilledButton(
@@ -243,7 +250,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                               style: FilledButton.styleFrom(
                                 minimumSize: const Size(double.infinity, 50),
                               ),
-                              child: Text(_isRegistering ? loc.register : loc.login),
+                              child: Text(_isRegistering ? 'Register' : 'Login'),
                             ),
                           const SizedBox(height: 16),
                           TextButton(
@@ -260,8 +267,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                                   },
                             child: Text(
                               _isRegistering
-                                  ? '${loc.login}?'
-                                  : '${loc.register}?',
+                                  ? 'Already have an account? Login'
+                                  : 'No account? Register',
                             ),
                           ),
                         ],
@@ -274,9 +281,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                       color: colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      'Requirements:\n• ${loc.username}: 3+ chars (a-z, 0-9, _)\n• ${loc.password}: 6+ chars',
-                      style: theme.textTheme.bodySmall,
+                    child: const Text(
+                      'Requirements:\n• Username: 3+ characters (a-z, 0-9, _)\n• Password: 6+ characters',
+                      style: TextStyle(fontSize: 12),
                       textAlign: TextAlign.center,
                     ),
                   ),

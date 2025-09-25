@@ -3,7 +3,6 @@ import 'api_client.dart';
 import 'websocket_client.dart';
 import 'models.dart';
 import 'utils.dart';
-import 'l10n/app_localizations.dart';
 
 class ChatScreen extends StatefulWidget {
   final ApiClient apiClient;
@@ -126,10 +125,10 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response.success) {
         _messageController.clear();
       } else {
-        _showError('${AppLocalizations.of(context).error}: ${response.error}');
+        _showError('Error: ${response.error}');
       }
     } catch (e) {
-      _showError('${AppLocalizations.of(context).error}: $e');
+      _showError('Error: $e');
     }
   }
 
@@ -137,13 +136,13 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final response = await widget.apiClient.leaveChannel(widget.channelId);
       if (response.success) {
-        _showSuccess(AppLocalizations.of(context).success);
+        _showSuccess('Success');
         widget.onBack();
       } else {
-        _showError('${AppLocalizations.of(context).error}: ${response.error}');
+        _showError('Error: ${response.error}');
       }
     } catch (e) {
-      _showError('${AppLocalizations.of(context).error}: $e');
+      _showError('Error: $e');
     }
   }
 
@@ -151,7 +150,7 @@ class _ChatScreenState extends State<ChatScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
+        backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -189,43 +188,41 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_channel?.name ?? loc.loading),
+            Text(_channel?.name ?? 'Loading...'),
             if (_channel != null)
               Text(
-                '${_channel!.memberCount} ${loc.members}',
-                style: theme.textTheme.bodySmall,
+                '${_channel!.memberCount} members',
+                style: const TextStyle(fontSize: 12),
               ),
           ],
         ),
         actions: [
           PopupMenuButton(
             itemBuilder: (context) => [
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'refresh',
                 child: Row(
                   children: [
-                    const Icon(Icons.refresh),
-                    const SizedBox(width: 12),
-                    Text(loc.refresh),
+                    Icon(Icons.refresh),
+                    SizedBox(width: 12),
+                    Text('Refresh'),
                   ],
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'leave',
                 child: Row(
                   children: [
-                    const Icon(Icons.exit_to_app),
-                    const SizedBox(width: 12),
-                    Text(loc.leaveChannel),
+                    Icon(Icons.exit_to_app),
+                    SizedBox(width: 12),
+                    Text('Leave Channel'),
                   ],
                 ),
               ),
@@ -258,18 +255,16 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.chat_bubble_outline, size: 64, color: colorScheme.outline),
+                            const Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
                             const SizedBox(height: 16),
-                            Text(
-                              loc.noMessages,
-                              style: theme.textTheme.headlineSmall,
+                            const Text(
+                              'No messages',
+                              style: TextStyle(fontSize: 18),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              loc.beFirstToMessage,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.outline,
-                              ),
+                            const Text(
+                              'Be the first to message in this channel!',
+                              style: TextStyle(color: Colors.grey),
                             ),
                           ],
                         ),
@@ -295,9 +290,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                     ),
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: isMe 
-                                          ? colorScheme.primary 
-                                          : colorScheme.surfaceVariant,
+                                      color: isMe ? Colors.blue.shade100 : Colors.grey.shade100,
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Column(
@@ -306,27 +299,17 @@ class _ChatScreenState extends State<ChatScreen> {
                                         if (!isMe)
                                           Text(
                                             message.from,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              color: colorScheme.onSurfaceVariant,
                                             ),
                                           ),
-                                        Text(
-                                          message.text,
-                                          style: TextStyle(
-                                            color: isMe 
-                                                ? colorScheme.onPrimary 
-                                                : colorScheme.onSurface,
-                                          ),
-                                        ),
+                                        Text(message.text),
                                         const SizedBox(height: 4),
                                         Text(
                                           _formatTimestamp(message.ts),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 10,
-                                            color: isMe 
-                                                ? colorScheme.onPrimary.withOpacity(0.7)
-                                                : colorScheme.onSurface.withOpacity(0.5),
+                                            color: Colors.grey,
                                           ),
                                         ),
                                       ],
@@ -341,28 +324,26 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: colorScheme.outline.withOpacity(0.2))),
-            ),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: loc.typeMessage,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
+                    decoration: const InputDecoration(
+                      hintText: 'Type a message...',
+                      border: OutlineInputBorder(),
                     ),
-                    maxLines: null,
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _sendMessage,
+                IconButton(
                   icon: const Icon(Icons.send),
+                  onPressed: _sendMessage,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ],
             ),

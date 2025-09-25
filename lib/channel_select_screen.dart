@@ -74,13 +74,13 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
         }
       } else {
         setState(() {
-          _errorMessage = response.error ?? AppLocalizations.of(context).connectionError;
+          _errorMessage = response.error ?? 'Connection Error';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = '${AppLocalizations.of(context).error}: $e';
+        _errorMessage = 'Error: $e';
         _isLoading = false;
       });
     }
@@ -90,7 +90,7 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
     final channelName = _channelNameController.text.trim();
     
     if (channelName.isEmpty) {
-      _showError(AppLocalizations.of(context).channelName);
+      _showError('Channel name cannot be empty');
       return;
     }
 
@@ -102,17 +102,17 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
       setState(() => _isCreatingChannel = false);
 
       if (response.success) {
-        _showSuccess('${AppLocalizations.of(context).success}!');
+        _showSuccess('Success!');
         _channelNameController.clear();
         await Future.delayed(const Duration(milliseconds: 500));
         await _loadChannels();
         if (mounted) Navigator.of(context).pop();
       } else {
-        _showError('${AppLocalizations.of(context).error}: ${response.error}');
+        _showError('Error: ${response.error}');
       }
     } catch (e) {
       setState(() => _isCreatingChannel = false);
-      _showError('${AppLocalizations.of(context).error}: $e');
+      _showError('Error: $e');
     }
   }
 
@@ -120,7 +120,7 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
     final channelName = _joinChannelController.text.trim();
     
     if (channelName.isEmpty) {
-      _showError(AppLocalizations.of(context).channelName);
+      _showError('Channel name cannot be empty');
       return;
     }
 
@@ -132,18 +132,18 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
       setState(() => _isJoiningChannel = false);
 
       if (response.success) {
-        _showSuccess('${AppLocalizations.of(context).success}!');
+        _showSuccess('Success!');
         _joinChannelController.clear();
         if (mounted) {
           Navigator.of(context).pop();
           await _loadChannels();
         }
       } else {
-        _showError('${AppLocalizations.of(context).error}: ${response.error}');
+        _showError('Error: ${response.error}');
       }
     } catch (e) {
       setState(() => _isJoiningChannel = false);
-      _showError('${AppLocalizations.of(context).error}: $e');
+      _showError('Error: $e');
     }
   }
 
@@ -173,18 +173,18 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(loc.createChannel),
+        title: Text(loc?.createChannel ?? 'Create Channel'),
         content: TextField(
           controller: _channelNameController,
           decoration: InputDecoration(
-            labelText: loc.channelName,
+            labelText: loc?.channelName ?? 'Channel Name',
           ),
           onSubmitted: (_) => _createChannel(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(loc.cancel),
+            child: Text(loc?.cancel ?? 'Cancel'),
           ),
           FilledButton(
             onPressed: _isCreatingChannel ? null : _createChannel,
@@ -194,7 +194,7 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(loc.createChannel),
+                : Text(loc?.createChannel ?? 'Create Channel'),
           ),
         ],
       ),
@@ -207,18 +207,18 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(loc.joinChannel),
+        title: Text(loc?.joinChannel ?? 'Join Channel'),
         content: TextField(
           controller: _joinChannelController,
           decoration: InputDecoration(
-            labelText: loc.channelName,
+            labelText: loc?.channelName ?? 'Channel Name',
           ),
           onSubmitted: (_) => _joinChannelByName(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(loc.cancel),
+            child: Text(loc?.cancel ?? 'Cancel'),
           ),
           FilledButton(
             onPressed: _isJoiningChannel ? null : _joinChannelByName,
@@ -228,7 +228,7 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(loc.joinChannel),
+                : Text(loc?.joinChannel ?? 'Join Channel'),
           ),
         ],
       ),
@@ -243,12 +243,12 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc.channels),
+        title: Text(loc?.channels ?? 'Channels'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: widget.onConfigPressed,
-            tooltip: loc.settings,
+            tooltip: loc?.settings ?? 'Settings',
           ),
           PopupMenuButton(
             itemBuilder: (context) => [
@@ -258,7 +258,7 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
                   children: [
                     const Icon(Icons.refresh),
                     const SizedBox(width: 12),
-                    Text(loc.refresh),
+                    Text(loc?.refresh ?? 'Refresh'),
                   ],
                 ),
               ),
@@ -268,7 +268,7 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
                   children: [
                     const Icon(Icons.logout),
                     const SizedBox(width: 12),
-                    Text(loc.logout),
+                    Text(loc?.logout ?? 'Logout'),
                   ],
                 ),
               ),
@@ -320,7 +320,7 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
                       const SizedBox(height: 20),
                       FilledButton(
                         onPressed: _loadChannels,
-                        child: Text(loc.retry),
+                        child: Text(loc?.retry ?? 'Retry'),
                       ),
                     ],
                   ),
@@ -339,12 +339,12 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
                                   Icon(Icons.chat_bubble_outline, size: 64, color: colorScheme.outline),
                                   const SizedBox(height: 16),
                                   Text(
-                                    loc.noChannelsAvailable,
+                                    loc?.noChannelsAvailable ?? 'No channels available',
                                     style: theme.textTheme.headlineSmall,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    '${loc.createChannel} ${loc.joinChannel.toLowerCase()}',
+                                    '${loc?.createChannel ?? 'Create Channel'} ${loc?.joinChannel.toLowerCase() ?? 'join channel'}',
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       color: colorScheme.outline,
                                     ),
@@ -373,8 +373,8 @@ class _ChannelSelectScreenState extends State<ChannelSelectScreen> {
                                 ),
                                 title: Text(channel.name),
                                 subtitle: Text(
-                                  '${loc.createdBy}: ${channel.createdBy}\n'
-                                  '${channel.memberCount} ${loc.members}',
+                                  '${loc?.createdBy ?? 'Created by'}: ${channel.createdBy}\n'
+                                  '${channel.memberCount} ${loc?.members ?? 'members'}',
                                 ),
                                 trailing: const Icon(Icons.arrow_forward_ios),
                                 onTap: () => widget.onChannelSelected(channel.id),

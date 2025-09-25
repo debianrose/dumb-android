@@ -1,3 +1,4 @@
+// server_config_screen.dart
 import 'package:flutter/material.dart';
 import 'api_client.dart';
 import 'utils.dart';
@@ -42,7 +43,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
 
   Future<void> _testConnection() async {
     setState(() {
-      _connectionStatus = AppLocalizations.of(context).loading;
+      _connectionStatus = 'Loading...';
     });
 
     try {
@@ -50,23 +51,23 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
       
       if (testResponse.success) {
         setState(() {
-          _connectionStatus = '✓ ${AppLocalizations.of(context).success}';
+          _connectionStatus = '✓ Success';
         });
       } else {
         setState(() {
-          _connectionStatus = '✗ ${AppLocalizations.of(context).error}: ${testResponse.error}';
+          _connectionStatus = '✗ Error: ${testResponse.error}';
         });
       }
     } catch (e) {
       setState(() {
-        _connectionStatus = '✗ ${AppLocalizations.of(context).error}: $e';
+        _connectionStatus = '✗ Error: $e';
       });
     }
   }
 
   Future<void> _saveConfig() async {
     if (_ipController.text.isEmpty || _portController.text.isEmpty) {
-      _showError('${AppLocalizations.of(context).error}');
+      _showError('Error');
       return;
     }
 
@@ -79,10 +80,10 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
       );
 
       await _testConnection();
-      _showSuccess(AppLocalizations.of(context).success);
+      _showSuccess('Success');
       widget.onConfigSaved();
     } catch (e) {
-      _showError('${AppLocalizations.of(context).error}: $e');
+      _showError('Error: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -137,7 +138,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc.serverSettings),
+        title: Text(loc?.serverSettings ?? 'Server Settings'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: widget.onConfigSaved,
@@ -155,8 +156,8 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      loc.currentSettings,
-                      style: theme.textTheme.titleMedium,
+                      loc?.currentSettings ?? 'Current Settings:',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -166,9 +167,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                         Expanded(
                           child: Text(
                             _currentUrl,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontFamily: 'monospace',
-                            ),
+                            style: const TextStyle(fontFamily: 'monospace'),
                           ),
                         ),
                       ],
@@ -181,7 +180,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                           size: 12,
                           color: _connectionStatus.contains('✓') 
                               ? Colors.green 
-                              : colorScheme.error,
+                              : Colors.red,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -190,7 +189,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                             style: TextStyle(
                               color: _connectionStatus.contains('✓') 
                                   ? Colors.green 
-                                  : colorScheme.error,
+                                  : Colors.red,
                             ),
                           ),
                         ),
@@ -204,7 +203,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
             TextField(
               controller: _ipController,
               decoration: InputDecoration(
-                labelText: loc.serverIp,
+                labelText: loc?.serverIp ?? 'Server IP Address',
                 prefixIcon: const Icon(Icons.computer),
               ),
             ),
@@ -212,15 +211,15 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
             TextField(
               controller: _portController,
               decoration: InputDecoration(
-                labelText: loc.serverPort,
+                labelText: loc?.serverPort ?? 'Server Port',
                 prefixIcon: const Icon(Icons.numbers),
               ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 24),
             Text(
-              loc.quickSettings,
-              style: theme.textTheme.titleMedium,
+              loc?.quickSettings ?? 'Quick Settings:',
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -228,19 +227,19 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
               runSpacing: 8,
               children: [
                 FilterChip(
-                  label: Text(loc.androidEmulator),
+                  label: Text(loc?.androidEmulator ?? 'Android Emulator'),
                   onSelected: (_) => _useLocalhost(),
                 ),
                 FilterChip(
-                  label: Text(loc.localhost),
+                  label: Text(loc?.localhost ?? 'Localhost'),
                   onSelected: (_) => _useLocalhostIPv4(),
                 ),
                 FilterChip(
-                  label: Text(loc.localNetwork),
+                  label: Text(loc?.localNetwork ?? 'Local Network'),
                   onSelected: (_) => _useLocalNetwork(),
                 ),
                 FilterChip(
-                  label: Text(loc.testConnection),
+                  label: Text(loc?.testConnection ?? 'Test Connection'),
                   onSelected: (_) => _testConnection(),
                 ),
               ],
@@ -253,7 +252,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(double.infinity, 50),
                     ),
-                    child: Text(loc.saveSettings),
+                    child: Text(loc?.saveSettings ?? 'Save Settings'),
                   ),
             const SizedBox(height: 24),
             Card(
@@ -263,13 +262,13 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      loc.hints,
-                      style: theme.textTheme.titleMedium,
+                      loc?.hints ?? 'Hints:',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    _buildHintItem('Android:', '10.0.2.2:3000'),
+                    _buildHintItem('Android Emulator:', '10.0.2.2:3000'),
                     _buildHintItem('Localhost:', '127.0.0.1:3000'),
-                    _buildHintItem('WiFi:', 'IP:3000'),
+                    _buildHintItem('Local Network:', 'IP:3000'),
                   ],
                 ),
               ),
@@ -290,7 +289,7 @@ class _ServerConfigScreenState extends State<ServerConfigScreen> {
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: const TextStyle(color: Colors.black87),
                 children: [
                   TextSpan(text: '$title ', style: const TextStyle(fontWeight: FontWeight.bold)),
                   TextSpan(text: description),

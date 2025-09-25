@@ -10,17 +10,21 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  intl: ^0.19.0
   http: ^1.1.0
   web_socket_channel: ^3.0.0
   shared_preferences: ^2.2.2
+  record: ^4.4.0
+  just_audio: ^0.9.35
+  path_provider: ^2.1.1
+  permission_handler: ^11.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  intl_generator: ^0.4.1
 
 flutter:
   uses-material-design: true
   generate: true
-  assets:
-    - lib/l10n/arb/
