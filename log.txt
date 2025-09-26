@@ -1,0 +1,123 @@
+Running Gradle task 'assembleDebug'...                            lib/chat_screen.dart:34:9: Error: Type 'AudioService' not found.
+Running Gradle task 'assembleDebug'...                              final AudioService _audioService = AudioService();
+Running Gradle task 'assembleDebug'...                                    ^^^^^^^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/voice_recorder_widget.dart:22:3: Error: Type 'Timer' not found.
+Running Gradle task 'assembleDebug'...                              Timer? _recordingTimer;
+Running Gradle task 'assembleDebug'...                              ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/voice_recorder_widget.dart:25:3: Error: Type 'Timer' not found.
+Running Gradle task 'assembleDebug'...                              Timer? _levelTimer;
+Running Gradle task 'assembleDebug'...                              ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/audio_visualizer.dart:26:3: Error: Type 'Timer' not found.
+Running Gradle task 'assembleDebug'...                              Timer? _animationTimer;
+Running Gradle task 'assembleDebug'...                              ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/chat_screen.dart:34:9: Error: 'AudioService' isn't a type.
+Running Gradle task 'assembleDebug'...                              final AudioService _audioService = AudioService();
+Running Gradle task 'assembleDebug'...                                    ^^^^^^^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/chat_screen.dart:34:38: Error: Method not found: 'AudioService'.
+Running Gradle task 'assembleDebug'...                              final AudioService _audioService = AudioService();
+Running Gradle task 'assembleDebug'...                                                                 ^^^^^^^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/chat_screen.dart:164:53: Error: The method 'uploadVoiceMessage' isn't defined for the type 'ApiClient'.
+Running Gradle task 'assembleDebug'...                             - 'ApiClient' is from 'package:dumb_android/api_client.dart' ('lib/api_client.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing method, or defining a method named 'uploadVoiceMessage'.
+Running Gradle task 'assembleDebug'...                                  final uploadResponse = await widget.apiClient.uploadVoiceMessage(
+Running Gradle task 'assembleDebug'...                                                                                ^^^^^^^^^^^^^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/chat_screen.dart:171:53: Error: The method 'sendVoiceOnlyMessage' isn't defined for the type 'ApiClient'.
+Running Gradle task 'assembleDebug'...                             - 'ApiClient' is from 'package:dumb_android/api_client.dart' ('lib/api_client.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing method, or defining a method named 'sendVoiceOnlyMessage'.
+Running Gradle task 'assembleDebug'...                                    final sendResponse = await widget.apiClient.sendVoiceOnlyMessage(
+Running Gradle task 'assembleDebug'...                                                                                ^^^^^^^^^^^^^^^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/chat_screen.dart:409:31: Error: The getter 'isVoiceMessage' isn't defined for the type 'Message'.
+Running Gradle task 'assembleDebug'...                             - 'Message' is from 'package:dumb_android/models.dart' ('lib/models.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing getter, or defining a getter or field named 'isVoiceMessage'.
+Running Gradle task 'assembleDebug'...                                              if (message.isVoiceMessage)
+Running Gradle task 'assembleDebug'...                                                          ^^^^^^^^^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/chat_screen.dart:414:31: Error: The getter 'hasFile' isn't defined for the type 'Message'.
+Running Gradle task 'assembleDebug'...                             - 'Message' is from 'package:dumb_android/models.dart' ('lib/models.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing getter, or defining a getter or field named 'hasFile'.
+Running Gradle task 'assembleDebug'...                                              if (message.hasFile && !message.isVoiceMessage)
+Running Gradle task 'assembleDebug'...                                                          ^^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/chat_screen.dart:414:51: Error: The getter 'isVoiceMessage' isn't defined for the type 'Message'.
+Running Gradle task 'assembleDebug'...                             - 'Message' is from 'package:dumb_android/models.dart' ('lib/models.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing getter, or defining a getter or field named 'isVoiceMessage'.
+Running Gradle task 'assembleDebug'...                                              if (message.hasFile && !message.isVoiceMessage)
+Running Gradle task 'assembleDebug'...                                                                              ^^^^^^^^^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/voice_recorder_widget.dart:22:3: Error: 'Timer' isn't a type.
+Running Gradle task 'assembleDebug'...                              Timer? _recordingTimer;
+Running Gradle task 'assembleDebug'...                              ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/voice_recorder_widget.dart:25:3: Error: 'Timer' isn't a type.
+Running Gradle task 'assembleDebug'...                              Timer? _levelTimer;
+Running Gradle task 'assembleDebug'...                              ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/voice_recorder_widget.dart:61:19: Error: The getter 'Timer' isn't defined for the type '_VoiceRecorderWidgetState'.
+Running Gradle task 'assembleDebug'...                             - '_VoiceRecorderWidgetState' is from 'package:dumb_android/voice_recorder_widget.dart' ('lib/voice_recorder_widget.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing getter, or defining a getter or field named 'Timer'.
+Running Gradle task 'assembleDebug'...                                _levelTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+Running Gradle task 'assembleDebug'...                                              ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/voice_recorder_widget.dart:69:52: Error: The method 'Random' isn't defined for the type '_VoiceRecorderWidgetState'.
+Running Gradle task 'assembleDebug'...                             - '_VoiceRecorderWidgetState' is from 'package:dumb_android/voice_recorder_widget.dart' ('lib/voice_recorder_widget.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing method, or defining a method named 'Random'.
+Running Gradle task 'assembleDebug'...                                    _audioLevels = List.generate(8, (index) => Random().nextDouble());
+Running Gradle task 'assembleDebug'...                                                                               ^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/voice_recorder_widget.dart:76:23: Error: The getter 'Timer' isn't defined for the type '_VoiceRecorderWidgetState'.
+Running Gradle task 'assembleDebug'...                             - '_VoiceRecorderWidgetState' is from 'package:dumb_android/voice_recorder_widget.dart' ('lib/voice_recorder_widget.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing getter, or defining a getter or field named 'Timer'.
+Running Gradle task 'assembleDebug'...                                _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+Running Gradle task 'assembleDebug'...                                                  ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/audio_visualizer.dart:26:3: Error: 'Timer' isn't a type.
+Running Gradle task 'assembleDebug'...                              Timer? _animationTimer;
+Running Gradle task 'assembleDebug'...                              ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/audio_visualizer.dart:71:23: Error: The getter 'Timer' isn't defined for the type '_AudioVisualizerState'.
+Running Gradle task 'assembleDebug'...                             - '_AudioVisualizerState' is from 'package:dumb_android/audio_visualizer.dart' ('lib/audio_visualizer.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing getter, or defining a getter or field named 'Timer'.
+Running Gradle task 'assembleDebug'...                                _animationTimer = Timer.periodic(const Duration(milliseconds: 150), (timer) {
+Running Gradle task 'assembleDebug'...                                                  ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/audio_visualizer.dart:89:26: Error: The method 'Random' isn't defined for the type '_AudioVisualizerState'.
+Running Gradle task 'assembleDebug'...                             - '_AudioVisualizerState' is from 'package:dumb_android/audio_visualizer.dart' ('lib/audio_visualizer.dart').
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing method, or defining a method named 'Random'.
+Running Gradle task 'assembleDebug'...                                final randomHeight = Random().nextDouble() * widget.maxHeight;
+Running Gradle task 'assembleDebug'...                                                     ^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/audio_service.dart:11:31: Error: The class 'Record' is abstract and can't be instantiated.
+Running Gradle task 'assembleDebug'...                              final Record _audioRecord = Record();
+Running Gradle task 'assembleDebug'...                                                          ^^^^^^
+Running Gradle task 'assembleDebug'...                            lib/audio_service.dart:49:26: Error: The method 'start' isn't defined for the type 'Record'.
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing method, or defining a method named 'start'.
+Running Gradle task 'assembleDebug'...                                  await _audioRecord.start(
+Running Gradle task 'assembleDebug'...                                                     ^^^^^
+Running Gradle task 'assembleDebug'...                            lib/audio_service.dart:81:39: Error: The method 'stop' isn't defined for the type 'Record'.
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing method, or defining a method named 'stop'.
+Running Gradle task 'assembleDebug'...                                  final path = await _audioRecord.stop();
+Running Gradle task 'assembleDebug'...                                                                  ^^^^
+Running Gradle task 'assembleDebug'...                            lib/audio_service.dart:130:18: Error: The method 'dispose' isn't defined for the type 'Record'.
+Running Gradle task 'assembleDebug'...                            Try correcting the name to the name of an existing method, or defining a method named 'dispose'.
+Running Gradle task 'assembleDebug'...                                _audioRecord.dispose();
+Running Gradle task 'assembleDebug'...                                             ^^^^^^^
+Running Gradle task 'assembleDebug'...                            ../../.pub-cache/hosted/pub.dev/record_linux-0.7.2/lib/record_linux.dart:12:7: Error: The non-abstract class 'RecordLinux' is missing implementations for these members:
+Running Gradle task 'assembleDebug'...                             - RecordMethodChannelPlatformInterface.startStream
+Running Gradle task 'assembleDebug'...                            Try to either
+Running Gradle task 'assembleDebug'...                             - provide an implementation,
+Running Gradle task 'assembleDebug'...                             - inherit an implementation from a superclass or mixin,
+Running Gradle task 'assembleDebug'...                             - mark the class as abstract, or
+Running Gradle task 'assembleDebug'...                             - provide a 'noSuchMethod' implementation.
+Running Gradle task 'assembleDebug'...
+Running Gradle task 'assembleDebug'...                            class RecordLinux extends RecordPlatform {
+Running Gradle task 'assembleDebug'...                                  ^^^^^^^^^^^
+Running Gradle task 'assembleDebug'...                            ../../.pub-cache/hosted/pub.dev/record_platform_interface-1.4.0/lib/src/record_platform_interface.dart:46:29: Context: 'RecordMethodChannelPlatformInterface.startStream' is defined here.
+Running Gradle task 'assembleDebug'...                              Future<Stream<Uint8List>> startStream(String recorderId, RecordConfig config);
+Running Gradle task 'assembleDebug'...                                                        ^^^^^^^^^^^
+Running Gradle task 'assembleDebug'...                            Target kernel_snapshot_program failed: Exception
+Running Gradle task 'assembleDebug'...
+Running Gradle task 'assembleDebug'...
+Running Gradle task 'assembleDebug'...                            FAILURE: Build failed with an exception.
+Running Gradle task 'assembleDebug'...
+Running Gradle task 'assembleDebug'...                            * What went wrong:
+Running Gradle task 'assembleDebug'...                            Execution failed for task ':app:compileFlutterBuildDebug'.
+Running Gradle task 'assembleDebug'...                            > Process 'command '/data/data/com.termux/files/usr/opt/flutter/bin/flutter'' finished with non-zero exit value 1
+Running Gradle task 'assembleDebug'...
+Running Gradle task 'assembleDebug'...                            * Try:
+Running Gradle task 'assembleDebug'...                            > Run with --stacktrace option to get the stack trace.
+Running Gradle task 'assembleDebug'...                            > Run with --info or --debug option to get more log output.
+Running Gradle task 'assembleDebug'...                            > Run with --scan to get full insights.
+Running Gradle task 'assembleDebug'...                            > Get more help at https://help.gradle.org.
+Running Gradle task 'assembleDebug'...
+Running Gradle task 'assembleDebug'...                            BUILD FAILED in 2m 21s
+Running Gradle task 'assembleDebug'...                            144.3s
+Gradle task assembleDebug failed with exit code 1
