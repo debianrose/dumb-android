@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "org.debianrose.dumb"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "27.1.12297006"  
     buildToolsVersion = "35.0.0"
 

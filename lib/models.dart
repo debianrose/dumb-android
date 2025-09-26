@@ -79,6 +79,10 @@ class Message {
       voice: json['voice'] != null ? VoiceAttachment.fromJson(json['voice']) : null,
     );
   }
+
+  bool get isVoiceMessage => voice != null;
+  bool get hasText => text.isNotEmpty;
+  bool get hasFile => file != null;
 }
 
 class FileAttachment {

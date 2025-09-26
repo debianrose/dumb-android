@@ -130,60 +130,6 @@ class ApiClient {
     }
   }
 
-  Future<ApiResponse> setup2FA() async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/api/2fa/setup'),
-        headers: await _getHeaders(),
-      ).timeout(const Duration(seconds: 10));
-      
-      return await _handleResponse(response);
-    } catch (e) {
-      return ApiResponse(success: false, error: 'Connection error: $e');
-    }
-  }
-
-  Future<ApiResponse> enable2FA(String token) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/api/2fa/enable'),
-        headers: await _getHeaders(),
-        body: json.encode({'token': token}),
-      ).timeout(const Duration(seconds: 10));
-      
-      return await _handleResponse(response);
-    } catch (e) {
-      return ApiResponse(success: false, error: 'Connection error: $e');
-    }
-  }
-
-  Future<ApiResponse> get2FAStatus() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/2fa/status'),
-        headers: await _getHeaders(),
-      ).timeout(const Duration(seconds: 10));
-      
-      return await _handleResponse(response);
-    } catch (e) {
-      return ApiResponse(success: false, error: 'Connection error: $e');
-    }
-  }
-
-  Future<ApiResponse> disable2FA(String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/api/2fa/disable'),
-        headers: await _getHeaders(),
-        body: json.encode({'password': password}),
-      ).timeout(const Duration(seconds: 10));
-      
-      return await _handleResponse(response);
-    } catch (e) {
-      return ApiResponse(success: false, error: 'Connection error: $e');
-    }
-  }
-
   Future<ApiResponse> createChannel(String name) async {
     try {
       final response = await http.post(
@@ -271,6 +217,44 @@ class ApiClient {
         }),
       ).timeout(const Duration(seconds: 10));
       
+      return await _handleResponse(response);
+    } catch (e) {
+      return ApiResponse(success: false, error: 'Connection error: $e');
+    }
+  }
+
+  Future<ApiResponse> uploadVoiceMessage(String channelId, String filePath) async {
+    try {
+      final file = File(filePath);
+      final bytes = await file.readAsBytes();
+      
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/voice/upload'),
+        headers: await _getHeaders(),
+        body: json.encode({
+          'channel': channelId,
+          'filename': file.uri.pathSegments.last,
+          'data': base64Encode(bytes),
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      return ApiResponse(success: false, error: 'Voice upload error: $e');
+    }
+  }
+
+  Future<ApiResponse> sendVoiceOnlyMessage(String channelId, String voiceId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/message/voice-only'),
+        headers: await _getHeaders(),
+        body: json.encode({
+          'channel': channelId,
+          'voiceMessage': voiceId,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
       return await _handleResponse(response);
     } catch (e) {
       return ApiResponse(success: false, error: 'Connection error: $e');
