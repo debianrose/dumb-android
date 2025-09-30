@@ -133,4 +133,89 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get version => 'Version';
+
+  @override
+  String get avatar => 'Avatar';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get system => 'System';
+
+  @override
+  String get light => 'Light';
+
+  @override
+  String get dark => 'Dark';
+
+  @override
+  String get twoFA => 'Two-Factor Authentication';
+
+  @override
+  String get enabletwoFA => 'Enable 2FA';
+
+  @override
+  String get disabletwoFA => 'Disable 2FA';
+
+  @override
+  String get twoFAEnabled => '2FA Enabled';
+
+  @override
+  String get twoFADisabled => '2FA Disabled';
+
+  @override
+  String get twoFASetup => '2FA Setup';
+
+  @override
+  String get twoFAQrInstructions =>
+      'Scan this QR code with your authenticator app.';
+
+  @override
+  String get twoFASecret => 'Secret';
+
+  @override
+  String get twoFACode => '2FA Code';
+
+  @override
+  String get twoFAEnterCode => 'Enter the code from your authenticator app';
+
+  @override
+  String get twoFARemoveInfo => 'To disable 2FA, enter your password.';
+
+  @override
+  String get chooseAvatar => 'Choose Avatar';
+
+  @override
+  String get changeAvatar => 'Change Avatar';
+
+  @override
+  String get uploading => 'Uploading...';
+
+  @override
+  String get downloaded => 'Downloaded:';
+
+  @override
+  String get voiceRecording => 'Voice Recording';
+
+  @override
+  String get startRecording => 'Start Recording';
+
+  @override
+  String get stopRecording => 'Stop Recording';
+
+  @override
+  String get playVoice => 'Play Voice Message';
+
+  @override
+  String get fileUploadError => 'File upload error';
+
+  @override
+  String get voiceUploadError => 'Voice upload error';
+
+  @override
+  String get sendError => 'Send error';
 }

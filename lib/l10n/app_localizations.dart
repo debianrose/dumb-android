@@ -349,6 +349,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version'**
   String get version;
+
+  /// No description provided for @avatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar'**
+  String get avatar;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get theme;
+
+  /// No description provided for @system.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get system;
+
+  /// No description provided for @light.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get light;
+
+  /// No description provided for @dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get dark;
+
+  /// No description provided for @twoFA.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-Factor Authentication'**
+  String get twoFA;
+
+  /// No description provided for @enabletwoFA.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable 2FA'**
+  String get enabletwoFA;
+
+  /// No description provided for @disabletwoFA.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable 2FA'**
+  String get disabletwoFA;
+
+  /// No description provided for @twoFAEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'2FA Enabled'**
+  String get twoFAEnabled;
+
+  /// No description provided for @twoFADisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'2FA Disabled'**
+  String get twoFADisabled;
+
+  /// No description provided for @twoFASetup.
+  ///
+  /// In en, this message translates to:
+  /// **'2FA Setup'**
+  String get twoFASetup;
+
+  /// No description provided for @twoFAQrInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan this QR code with your authenticator app.'**
+  String get twoFAQrInstructions;
+
+  /// No description provided for @twoFASecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret'**
+  String get twoFASecret;
+
+  /// No description provided for @twoFACode.
+  ///
+  /// In en, this message translates to:
+  /// **'2FA Code'**
+  String get twoFACode;
+
+  /// No description provided for @twoFAEnterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code from your authenticator app'**
+  String get twoFAEnterCode;
+
+  /// No description provided for @twoFARemoveInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'To disable 2FA, enter your password.'**
+  String get twoFARemoveInfo;
+
+  /// No description provided for @chooseAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Avatar'**
+  String get chooseAvatar;
+
+  /// No description provided for @changeAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Avatar'**
+  String get changeAvatar;
+
+  /// No description provided for @uploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading...'**
+  String get uploading;
+
+  /// No description provided for @downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded:'**
+  String get downloaded;
+
+  /// No description provided for @voiceRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Recording'**
+  String get voiceRecording;
+
+  /// No description provided for @startRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Recording'**
+  String get startRecording;
+
+  /// No description provided for @stopRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Recording'**
+  String get stopRecording;
+
+  /// No description provided for @playVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Play Voice Message'**
+  String get playVoice;
+
+  /// No description provided for @fileUploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'File upload error'**
+  String get fileUploadError;
+
+  /// No description provided for @voiceUploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice upload error'**
+  String get voiceUploadError;
+
+  /// No description provided for @sendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Send error'**
+  String get sendError;
 }
 
 class _AppLocalizationsDelegate
