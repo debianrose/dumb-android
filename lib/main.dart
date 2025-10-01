@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mime/mime.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
@@ -24,7 +25,7 @@ void main() async {
   runApp(DumbApp(themeMode: themeMode));
 }
 
-const String apiUrl = 'http://localhost:3000/api';
+String apiUrl = 'http://localhost:3000/api';
 
 class DumbApp extends StatefulWidget {
   final ThemeMode themeMode;
@@ -41,6 +42,14 @@ class _DumbAppState extends State<DumbApp> {
   void initState() {
     super.initState();
     _themeMode = widget.themeMode;
+    _loadServerUrl();
+  }
+
+  void _loadServerUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      apiUrl = prefs.getString('server_url') ?? 'http://localhost:3000/api';
+    });
   }
 
   void setLocale(Locale locale) {
@@ -52,6 +61,12 @@ class _DumbAppState extends State<DumbApp> {
     setState(() => _themeMode = mode);
     await prefs.setString('theme_mode',
         mode == ThemeMode.dark ? 'dark' : mode == ThemeMode.light ? 'light' : 'system');
+  }
+
+  void setServerUrl(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() => apiUrl = url);
+    await prefs.setString('server_url', url);
   }
 
   @override
@@ -80,18 +95,19 @@ class _DumbAppState extends State<DumbApp> {
       home: AuthGate(
         setLocale: setLocale,
         setTheme: setTheme,
+        setServerUrl: setServerUrl,
         themeMode: _themeMode,
       ),
     );
   }
 }
 
-// =================== AUTH ==========================
 class AuthGate extends StatefulWidget {
   final void Function(Locale) setLocale;
   final void Function(ThemeMode) setTheme;
+  final void Function(String) setServerUrl;
   final ThemeMode themeMode;
-  const AuthGate({required this.setLocale, required this.setTheme, required this.themeMode});
+  const AuthGate({required this.setLocale, required this.setTheme, required this.setServerUrl, required this.themeMode});
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -120,6 +136,7 @@ class _AuthGateState extends State<AuthGate> {
               token: token!,
               setLocale: widget.setLocale,
               setTheme: widget.setTheme,
+              setServerUrl: widget.setServerUrl,
               themeMode: widget.themeMode,
             ),
           ),
@@ -145,6 +162,7 @@ class _AuthGateState extends State<AuthGate> {
                   token: t,
                   setLocale: widget.setLocale,
                   setTheme: widget.setTheme,
+                  setServerUrl: widget.setServerUrl,
                   themeMode: widget.themeMode,
                 ),
               ),
@@ -168,7 +186,10 @@ class _AuthScreenState extends State<AuthScreen> {
   String error = '', sessionId = '';
 
   void _auth() async {
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      error = '';
+    });
     final url = isLogin ? '$apiUrl/login' : '$apiUrl/register';
     final resp = await http.post(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'username': username, 'password': password, if (requires2FA) 'twoFactorToken': twoFactorToken}));
     final json = jsonDecode(resp.body);
@@ -179,6 +200,7 @@ class _AuthScreenState extends State<AuthScreen> {
           requires2FA = true;
           sessionId = json['sessionId'] ?? '';
           error = json['message'] ?? AppLocalizations.of(context)?.error ?? 'Error';
+          loading = false;
         });
       } else {
         setState(() {
@@ -202,7 +224,10 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _verify2FA() async {
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      error = '';
+    });
     final resp = await http.post(Uri.parse('$apiUrl/2fa/verify-login'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'username': username, 'sessionId': sessionId, 'twoFactorToken': twoFactorToken}));
     final json = jsonDecode(resp.body);
 
@@ -256,11 +281,13 @@ class _AuthScreenState extends State<AuthScreen> {
                           child: Text(requires2FA ? '2FA' : isLogin ? loc.login : loc.register),
                         ),
                         TextButton(
-                          onPressed: () => setState(() {
-                            isLogin = !isLogin;
-                            error = '';
-                            requires2FA = false;
-                          }),
+                          onPressed: loading
+                              ? null
+                              : () => setState(() {
+                                    isLogin = !isLogin;
+                                    error = '';
+                                    requires2FA = false;
+                                  }),
                           child: Text(isLogin ? loc.register : loc.login),
                         ),
                       ]),
@@ -273,16 +300,17 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 }
 
-// =============== CHANNELS ===================
 class ChannelsScreen extends StatefulWidget {
   final String token;
   final void Function(Locale) setLocale;
   final void Function(ThemeMode) setTheme;
+  final void Function(String) setServerUrl;
   final ThemeMode themeMode;
   const ChannelsScreen({
     required this.token,
     required this.setLocale,
     required this.setTheme,
+    required this.setServerUrl,
     required this.themeMode,
   });
   @override
@@ -291,13 +319,45 @@ class ChannelsScreen extends StatefulWidget {
 
 class _ChannelsScreenState extends State<ChannelsScreen> {
   List channels = [];
-  String error = '', search = '', channelName = '';
-  bool loading = true, creating = false;
+  String error = '';
+  bool loading = true;
+  WebSocketChannel? _channel;
 
   @override
   void initState() {
     super.initState();
     _loadChannels();
+    _connectWebSocket();
+  }
+
+  void _connectWebSocket() {
+    try {
+      final wsUrl = apiUrl.replaceFirst('http', 'ws').replaceFirst('/api', '');
+      _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      _channel!.stream.listen(
+        (message) {
+          final data = jsonDecode(message);
+          if (data['type'] == 'message' && data['action'] == 'new') {
+            _loadChannels();
+          }
+        },
+        onError: (error) {
+          print('WebSocket error: $error');
+        },
+        onDone: () {
+          print('WebSocket closed');
+          Future.delayed(Duration(seconds: 5), _connectWebSocket);
+        },
+      );
+    } catch (e) {
+      print('WebSocket connection failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _channel?.sink.close();
+    super.dispose();
   }
 
   Future<void> _loadChannels() async {
@@ -317,85 +377,67 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     }
   }
 
-  Future<void> _createChannel() async {
-    setState(() => creating = true);
-    final resp = await http.post(Uri.parse('$apiUrl/channels/create'), headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, body: jsonEncode({'name': channelName}));
-    final json = jsonDecode(resp.body);
-    if (json['success'] == true) {
-      await _loadChannels();
-      channelName = '';
-    }
-    setState(() {
-      error = json['error'] ?? '';
-      creating = false;
-    });
+  void _createChannel() {
+    showDialog(
+      context: context,
+      builder: (context) => CreateChannelDialog(
+        token: widget.token,
+        onChannelCreated: _loadChannels,
+      ),
+    );
   }
 
-  Future<void> _searchChannels() async {
-    setState(() => loading = true);
-    final resp = await http.post(Uri.parse('$apiUrl/channels/search'), headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, body: jsonEncode({'query': search}));
-    final json = jsonDecode(resp.body);
-    if (json['success'] == true) {
-      setState(() {
-        channels = json['channels'] ?? [];
-        loading = false;
-      });
-    } else {
-      setState(() {
-        error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Error';
-        loading = false;
-      });
-    }
+  void _searchChannels() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SearchChannelsScreen(
+          token: widget.token,
+          onChannelJoined: _loadChannels,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(loc.channels), actions: [
-        IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SettingsScreen(
-                token: widget.token,
-                setLocale: widget.setLocale,
-                setTheme: widget.setTheme,
-                themeMode: widget.themeMode,
+      appBar: AppBar(
+        title: Text(loc.channels),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _searchChannels,
+            tooltip: loc.search,
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _createChannel,
+            tooltip: loc.createChannel,
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SettingsScreen(
+                  token: widget.token,
+                  setLocale: widget.setLocale,
+                  setTheme: widget.setTheme,
+                  setServerUrl: widget.setServerUrl,
+                  themeMode: widget.themeMode,
+                ),
               ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
       body: loading
           ? Center(child: Text(loc.loading))
           : Column(children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(labelText: loc.search),
-                      onChanged: (v) => search = v,
-                    ),
-                  ),
-                  IconButton(icon: const Icon(Icons.search), onPressed: _searchChannels),
-                ]),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(labelText: loc.createChannel),
-                      onChanged: (v) => channelName = v,
-                    ),
-                  ),
-                  IconButton(icon: const Icon(Icons.add), onPressed: _createChannel),
-                ]),
-              ),
-              if (error.isNotEmpty) Padding(padding: const EdgeInsets.all(8.0), child: Text(error, style: const TextStyle(color: Colors.red))),
+              if (error.isNotEmpty) 
+                Padding(padding: const EdgeInsets.all(8.0), child: Text(error, style: const TextStyle(color: Colors.red))),
               Expanded(
                 child: ListView.builder(
                   itemCount: channels.length,
@@ -410,7 +452,172 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   }
 }
 
-// ================= CHAT ==========================
+class CreateChannelDialog extends StatefulWidget {
+  final String token;
+  final VoidCallback onChannelCreated;
+  const CreateChannelDialog({required this.token, required this.onChannelCreated});
+
+  @override
+  State<CreateChannelDialog> createState() => _CreateChannelDialogState();
+}
+
+class _CreateChannelDialogState extends State<CreateChannelDialog> {
+  String channelName = '';
+  bool creating = false;
+  String error = '';
+
+  Future<void> _createChannel() async {
+    if (channelName.isEmpty) return;
+    
+    setState(() => creating = true);
+    final resp = await http.post(
+      Uri.parse('$apiUrl/channels/create'), 
+      headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, 
+      body: jsonEncode({'name': channelName})
+    );
+    final json = jsonDecode(resp.body);
+    
+    if (json['success'] == true) {
+      widget.onChannelCreated();
+      Navigator.pop(context);
+    } else {
+      setState(() {
+        error = json['error'] ?? '';
+        creating = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(AppLocalizations.of(context)!.createChannel),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            decoration: InputDecoration(labelText: AppLocalizations.of(context)!.channelName),
+            onChanged: (v) => channelName = v,
+          ),
+          if (error.isNotEmpty) 
+            Padding(padding: const EdgeInsets.only(top: 10), child: Text(error, style: const TextStyle(color: Colors.red))),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(AppLocalizations.of(context)!.cancel),
+        ),
+        ElevatedButton(
+          onPressed: creating ? null : _createChannel,
+          child: creating ? const CircularProgressIndicator() : Text(AppLocalizations.of(context)!.create),
+        ),
+      ],
+    );
+  }
+}
+
+class SearchChannelsScreen extends StatefulWidget {
+  final String token;
+  final VoidCallback onChannelJoined;
+  const SearchChannelsScreen({required this.token, required this.onChannelJoined});
+
+  @override
+  State<SearchChannelsScreen> createState() => _SearchChannelsScreenState();
+}
+
+class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
+  List channels = [];
+  String search = '', error = '';
+  bool loading = false;
+
+  Future<void> _searchChannels() async {
+    if (search.isEmpty) return;
+    
+    setState(() => loading = true);
+    final resp = await http.post(
+      Uri.parse('$apiUrl/channels/search'), 
+      headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, 
+      body: jsonEncode({'query': search})
+    );
+    final json = jsonDecode(resp.body);
+    
+    if (json['success'] == true) {
+      setState(() {
+        channels = json['channels'] ?? [];
+        loading = false;
+      });
+    } else {
+      setState(() {
+        error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Error';
+        loading = false;
+      });
+    }
+  }
+
+  Future<void> _joinChannel(String channelName) async {
+    final resp = await http.post(
+      Uri.parse('$apiUrl/channels/join'), 
+      headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, 
+      body: jsonEncode({'channel': channelName})
+    );
+    final json = jsonDecode(resp.body);
+    
+    if (json['success'] == true) {
+      widget.onChannelJoined();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Joined $channelName'))
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(json['error'] ?? 'Join failed'))
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return Scaffold(
+      appBar: AppBar(title: Text(loc.search)),
+      body: Column(children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(children: [
+            Expanded(
+              child: TextField(
+                decoration: InputDecoration(labelText: loc.search),
+                onChanged: (v) => search = v,
+                onSubmitted: (_) => _searchChannels(),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.search), 
+              onPressed: _searchChannels,
+            ),
+          ]),
+        ),
+        if (error.isNotEmpty) 
+          Padding(padding: const EdgeInsets.all(8.0), child: Text(error, style: const TextStyle(color: Colors.red))),
+        Expanded(
+          child: loading 
+            ? Center(child: Text(loc.loading))
+            : ListView.builder(
+                itemCount: channels.length,
+                itemBuilder: (_, i) => ListTile(
+                  title: Text(channels[i]['name'] ?? ''),
+                  trailing: ElevatedButton(
+                    onPressed: () => _joinChannel(channels[i]['name']),
+                    child: Text(loc.join),
+                  ),
+                ),
+              ),
+        ),
+      ]),
+    );
+  }
+}
+
 class ChatScreen extends StatefulWidget {
   final String token, channel;
   const ChatScreen({required this.token, required this.channel});
@@ -426,6 +633,7 @@ class _ChatScreenState extends State<ChatScreen> {
   FlutterSoundRecorder? _recorder;
   bool _isRecording = false;
   String? _voiceFilePath;
+  WebSocketChannel? _wsChannel;
 
   @override
   void initState() {
@@ -433,17 +641,40 @@ class _ChatScreenState extends State<ChatScreen> {
     _recorder = FlutterSoundRecorder();
     _recorder!.openRecorder();
     _loadMessages();
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 3));
-      if (!mounted) return false;
-      await _loadMessages();
-      return true;
-    });
+    _connectWebSocket();
+  }
+
+  void _connectWebSocket() {
+    try {
+      final wsUrl = apiUrl.replaceFirst('http', 'ws').replaceFirst('/api', '');
+      _wsChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      _wsChannel!.stream.listen(
+        (message) {
+          final data = jsonDecode(message);
+          if (data['type'] == 'message' && data['action'] == 'new' && data['channel'] == widget.channel) {
+            setState(() {
+              messages.add(data);
+            });
+            _scrollToBottom();
+          }
+        },
+        onError: (error) {
+          print('WebSocket error: $error');
+        },
+        onDone: () {
+          print('WebSocket closed');
+          Future.delayed(Duration(seconds: 5), _connectWebSocket);
+        },
+      );
+    } catch (e) {
+      print('WebSocket connection failed: $e');
+    }
   }
 
   @override
   void dispose() {
     _recorder?.closeRecorder();
+    _wsChannel?.sink.close();
     super.dispose();
   }
 
@@ -458,9 +689,7 @@ class _ChatScreenState extends State<ChatScreen> {
         messages = json['messages'] ?? [];
         loading = false;
       });
-      if (scrollController.hasClients) {
-        scrollController.jumpTo(scrollController.position.maxScrollExtent);
-      }
+      _scrollToBottom();
     } else {
       setState(() {
         error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Error';
@@ -469,13 +698,25 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _scrollToBottom() {
+    if (scrollController.hasClients) {
+      scrollController.jumpTo(scrollController.position.maxScrollExtent);
+    }
+  }
+
   Future<void> _sendMessage() async {
+    if (text.isEmpty) return;
+    
     setState(() => sending = true);
-    final resp = await http.post(Uri.parse('$apiUrl/message'), headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, body: jsonEncode({'channel': widget.channel, 'text': text}));
+    final resp = await http.post(
+      Uri.parse('$apiUrl/message'), 
+      headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, 
+      body: jsonEncode({'channel': widget.channel, 'text': text})
+    );
     final json = jsonDecode(resp.body);
+    
     if (json['success'] == true) {
-      text = '';
-      await _loadMessages();
+      setState(() => text = '');
     } else {
       setState(() => error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Send error');
     }
@@ -497,10 +738,14 @@ class _ChatScreenState extends State<ChatScreen> {
     req.files.add(await http.MultipartFile.fromPath('file', savedFile.path));
     var resp = await req.send();
     var json = jsonDecode(await resp.stream.bytesToString());
+    
     if (json['success'] == true) {
       final fileId = json['file']['id'];
-      await http.post(Uri.parse('$apiUrl/message'), headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, body: jsonEncode({'channel': widget.channel, 'fileId': fileId}));
-      await _loadMessages();
+      await http.post(
+        Uri.parse('$apiUrl/message'), 
+        headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, 
+        body: jsonEncode({'channel': widget.channel, 'fileId': fileId})
+      );
     } else {
       setState(() => error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'File upload error');
     }
@@ -529,17 +774,20 @@ class _ChatScreenState extends State<ChatScreen> {
       body: jsonEncode({'channel': widget.channel, 'duration': 0}),
     );
     final jsonResp = jsonDecode(resp.body);
+    
     if (jsonResp['success'] != true) {
       setState(() => error = jsonResp['error'] ?? AppLocalizations.of(context)?.error ?? 'Voice upload error');
       return;
     }
+    
     final voiceId = jsonResp['voiceId'];
-    final uploadUrl = 'http://localhost:3000${jsonResp['uploadUrl']}';
+    final uploadUrl = apiUrl.replaceFirst('/api', '') + jsonResp['uploadUrl'];
 
     var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
     request.headers['Authorization'] = 'Bearer ${widget.token}';
     request.files.add(await http.MultipartFile.fromPath('file', _voiceFilePath!));
     var uploadResp = await request.send();
+    
     if (uploadResp.statusCode != 200) {
       setState(() => error = AppLocalizations.of(context)?.error ?? 'Voice upload error');
       return;
@@ -550,28 +798,40 @@ class _ChatScreenState extends State<ChatScreen> {
       headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'},
       body: jsonEncode({'channel': widget.channel, 'voiceMessage': voiceId}),
     );
-    final msgJson = jsonDecode(await msgResp.body);
+    final msgJson = jsonDecode(await msgResp.stream.bytesToString());
+    
     if (msgJson['success'] != true) {
       setState(() => error = msgJson['error'] ?? AppLocalizations.of(context)?.error ?? 'Voice send error');
-      return;
     }
-
-    await _loadMessages();
   }
 
   Future<void> _playVoice(String url) async {
     final player = AudioPlayer();
-    await player.setUrl('http://localhost:3000$url');
+    await player.setUrl(apiUrl.replaceFirst('/api', '') + url);
     await player.play();
   }
 
-  Future<void> _downloadFile(String url, String filename, String mimeType) async {
-    final isMedia = mimeType.startsWith('image/') || mimeType.startsWith('video/');
-    final folder = await getDumbFolder(media: isMedia);
-    final resp = await http.get(Uri.parse('http://localhost:3000$url'));
-    final file = File('$folder/$filename');
-    await file.writeAsBytes(resp.bodyBytes);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Downloaded: $filename')));
+  void _viewImage(String url, String filename) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Image.network(apiUrl.replaceFirst('/api', '') + url),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                icon: Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -646,7 +906,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.send),
-                        onPressed: _sendMessage,
+                        onPressed: sending ? null : _sendMessage,
                         tooltip: loc.sendMessage,
                       ),
                     ],
@@ -661,10 +921,11 @@ class _ChatScreenState extends State<ChatScreen> {
     final mime = file['mimetype'] ?? '';
     final url = file['downloadUrl'];
     final filename = file['originalName'] ?? 'file';
+    
     if (mime.startsWith('image/')) {
       return GestureDetector(
-        onTap: () => _downloadFile(url, filename, mime),
-        child: Image.network('http://localhost:3000$url', width: 150, height: 150, fit: BoxFit.cover),
+        onTap: () => _viewImage(url, filename),
+        child: Image.network(apiUrl.replaceFirst('/api', '') + url, width: 150, height: 150, fit: BoxFit.cover),
       );
     } else if (mime.startsWith('video/')) {
       return GestureDetector(
@@ -678,9 +939,17 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
   }
+
+  Future<void> _downloadFile(String url, String filename, String mimeType) async {
+    final isMedia = mimeType.startsWith('image/') || mimeType.startsWith('video/');
+    final folder = await getDumbFolder(media: isMedia);
+    final resp = await http.get(Uri.parse(apiUrl.replaceFirst('/api', '') + url));
+    final file = File('$folder/$filename');
+    await file.writeAsBytes(resp.bodyBytes);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Downloaded: $filename')));
+  }
 }
 
-// ================== FILE UTILS ==================
 Future<String> getDumbFolder({bool media = false}) async {
   Directory dir;
   if (Platform.isAndroid) {
@@ -696,31 +965,32 @@ Future<String> getDumbFolder({bool media = false}) async {
   return dir.path;
 }
 
-// ================= AVATARS ======================
 class UserAvatar extends StatelessWidget {
   final String username, token;
   const UserAvatar({required this.username, required this.token});
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = 'http://localhost:3000/api/user/$username/avatar';
+    final avatarUrl = '$apiUrl/user/$username/avatar?${DateTime.now().millisecondsSinceEpoch}';
     return CircleAvatar(
       backgroundImage: NetworkImage(avatarUrl),
-      child: Text(username.substring(0, 1)),
+      onBackgroundImageError: (exception, stackTrace) {},
+      child: null,
     );
   }
 }
 
-// =============== SETTINGS ======================
 class SettingsScreen extends StatefulWidget {
   final String token;
   final void Function(Locale) setLocale;
   final void Function(ThemeMode) setTheme;
+  final void Function(String) setServerUrl;
   final ThemeMode themeMode;
 
   const SettingsScreen({
     required this.token,
     required this.setLocale,
     required this.setTheme,
+    required this.setServerUrl,
     required this.themeMode,
   });
 
@@ -738,11 +1008,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? twoFAError;
   Locale? tempLocale;
   String? username;
+  String serverUrl = '';
 
 @override
 void initState() {
   super.initState();
   _loadUsernameAndInit();
+  _loadServerUrl();
+}
+
+Future<void> _loadServerUrl() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    serverUrl = prefs.getString('server_url') ?? 'http://localhost:3000';
+  });
 }
 
 Future<void> _loadUsernameAndInit() async {
@@ -757,7 +1036,7 @@ Future<void> _loadUsernameAndInit() async {
 Future<void> _loadAvatar() async {
   if (username == null) return;
   setState(() {
-    avatarUrl = 'http://localhost:3000/api/user/$username/avatar?${DateTime.now().millisecondsSinceEpoch}';
+    avatarUrl = '$apiUrl/user/$username/avatar?${DateTime.now().millisecondsSinceEpoch}';
   });
 }
 
@@ -842,6 +1121,15 @@ Future<void> _loadAvatar() async {
     });
   }
 
+  void _updateServerUrl(String url) {
+    widget.setServerUrl(url);
+    setState(() {
+      serverUrl = url;
+      apiUrl = '$url/api';
+    });
+    _loadAvatar();
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -853,7 +1141,11 @@ Future<void> _loadAvatar() async {
           ListTile(
             title: Text(loc.profile),
             leading: avatarUrl != null
-                ? CircleAvatar(backgroundImage: NetworkImage(avatarUrl!))
+                ? CircleAvatar(
+                    backgroundImage: NetworkImage(avatarUrl!),
+                    onBackgroundImageError: (exception, stackTrace) {},
+                    child: null,
+                  )
                 : const CircleAvatar(child: Icon(Icons.person)),
             trailing: uploadingAvatar
                 ? const CircularProgressIndicator()
@@ -864,12 +1156,47 @@ Future<void> _loadAvatar() async {
           ),
           const Divider(),
           ListTile(
+            title: Text('Server URL'),
+            subtitle: Text(serverUrl),
+            trailing: IconButton(
+              icon: Icon(Icons.edit),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    String newUrl = serverUrl;
+                    return AlertDialog(
+                      title: Text('Server URL'),
+                      content: TextField(
+                        decoration: InputDecoration(hintText: 'http://localhost:3000'),
+                        onChanged: (v) => newUrl = v,
+                        controller: TextEditingController(text: serverUrl),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(loc.cancel),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            _updateServerUrl(newUrl);
+                            Navigator.pop(context);
+                          },
+                          child: Text('Save'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          const Divider(),
+          ListTile(
             title: Text('2FA'),
             subtitle: loading2FA
                 ? const LinearProgressIndicator()
-                : Text(twoFAEnabled
-                    ? loc.success
-                    : loc.error),
+                : Text(twoFAEnabled ? loc.success : loc.error),
             trailing: twoFAEnabled
                 ? IconButton(
                     icon: const Icon(Icons.lock_open),
@@ -994,3 +1321,4 @@ Future<void> _loadAvatar() async {
     );
   }
 }
+
