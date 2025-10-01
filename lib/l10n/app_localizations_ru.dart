@@ -218,4 +218,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sendError => 'Send error';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get join => 'Join';
 }

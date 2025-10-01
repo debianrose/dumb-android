@@ -798,8 +798,7 @@ class _ChatScreenState extends State<ChatScreen> {
       headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'},
       body: jsonEncode({'channel': widget.channel, 'voiceMessage': voiceId}),
     );
-    final msgJson = jsonDecode(await msgResp.stream.bytesToString());
-    
+    final msgJson = jsonDecode(await msgResp.body);    
     if (msgJson['success'] != true) {
       setState(() => error = msgJson['error'] ?? AppLocalizations.of(context)?.error ?? 'Voice send error');
     }

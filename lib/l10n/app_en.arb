@@ -69,5 +69,7 @@
   "playVoice": "Play Voice Message",
   "fileUploadError": "File upload error",
   "voiceUploadError": "Voice upload error",
-  "sendError": "Send error"
+  "sendError": "Send error",
+  "create": "Create",
+  "join": "Join"
 }
