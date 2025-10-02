@@ -26,6 +26,8 @@ void main() async {
 }
 
 String apiUrl = 'http://localhost:3000/api';
+String? _cachedToken;
+final Map<String, String> _avatarCache = {};
 
 class DumbApp extends StatefulWidget {
   final ThemeMode themeMode;
@@ -43,6 +45,12 @@ class _DumbAppState extends State<DumbApp> {
     super.initState();
     _themeMode = widget.themeMode;
     _loadServerUrl();
+    _loadToken();
+  }
+
+  void _loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    _cachedToken = prefs.getString('token');
   }
 
   void _loadServerUrl() async {
@@ -126,8 +134,9 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     token = prefs.getString('token');
+    _cachedToken = token;
     if (token != null) {
-      final resp = await http.get(Uri.parse('$apiUrl/channels'), headers: {'Authorization': 'Bearer $token!'});
+      final resp = await http.get(Uri.parse('$apiUrl/channels'), headers: {'Authorization': 'Bearer $token'});
       if (resp.statusCode == 200 && jsonDecode(resp.body)['success'] == true) {
         Navigator.pushReplacement(
           context,
@@ -144,6 +153,7 @@ class _AuthGateState extends State<AuthGate> {
         return;
       }
       prefs.remove('token');
+      _cachedToken = null;
     }
     setState(() => loading = false);
   }
@@ -155,6 +165,7 @@ class _AuthGateState extends State<AuthGate> {
         : AuthScreen(onLogin: (t) async {
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString('token', t);
+            _cachedToken = t;
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -333,7 +344,9 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   void _connectWebSocket() {
     try {
       final wsUrl = apiUrl.replaceFirst('http', 'ws').replaceFirst('/api', '');
-      _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      final uri = Uri.parse('$wsUrl?token=${_cachedToken}');
+      _channel = WebSocketChannel.connect(uri);
+      
       _channel!.stream.listen(
         (message) {
           final data = jsonDecode(message);
@@ -530,6 +543,47 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
   List channels = [];
   String search = '', error = '';
   bool loading = false;
+  WebSocketChannel? _channel;
+
+  @override
+  void initState() {
+    super.initState();
+    _connectWebSocket();
+  }
+
+  void _connectWebSocket() {
+    try {
+      final wsUrl = apiUrl.replaceFirst('http', 'ws').replaceFirst('/api', '');
+      final uri = Uri.parse('$wsUrl?token=${_cachedToken}');
+      _channel = WebSocketChannel.connect(uri);
+      
+      _channel!.stream.listen(
+        (message) {
+          final data = jsonDecode(message);
+          if (data['type'] == 'message' && data['action'] == 'new') {
+            if (search.isNotEmpty) {
+              _searchChannels();
+            }
+          }
+        },
+        onError: (error) {
+          print('WebSocket error: $error');
+        },
+        onDone: () {
+          print('WebSocket closed');
+          Future.delayed(Duration(seconds: 5), _connectWebSocket);
+        },
+      );
+    } catch (e) {
+      print('WebSocket connection failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _channel?.sink.close();
+    super.dispose();
+  }
 
   Future<void> _searchChannels() async {
     if (search.isEmpty) return;
@@ -634,6 +688,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isRecording = false;
   String? _voiceFilePath;
   WebSocketChannel? _wsChannel;
+  final Map<String, String> _channelAvatarCache = {};
 
   @override
   void initState() {
@@ -642,16 +697,53 @@ class _ChatScreenState extends State<ChatScreen> {
     _recorder!.openRecorder();
     _loadMessages();
     _connectWebSocket();
+    _preloadChannelAvatars();
+  }
+
+  void _preloadChannelAvatars() async {
+    final resp = await http.get(
+      Uri.parse('$apiUrl/channels/members?channel=${Uri.encodeComponent(widget.channel)}'),
+      headers: {'Authorization': 'Bearer ${widget.token}'},
+    );
+    final json = jsonDecode(resp.body);
+    if (json['success'] == true) {
+      final members = List<String>.from(json['members'] ?? []);
+      for (final member in members) {
+        if (!_avatarCache.containsKey(member)) {
+          _loadUserAvatar(member);
+        }
+      }
+    }
+  }
+
+  void _loadUserAvatar(String username) async {
+    if (_avatarCache.containsKey(username)) return;
+    
+    try {
+      final avatarUrl = '$apiUrl/user/$username/avatar?${DateTime.now().millisecondsSinceEpoch}';
+      final response = await http.get(Uri.parse(avatarUrl));
+      if (response.statusCode == 200) {
+        _avatarCache[username] = avatarUrl;
+      }
+    } catch (e) {
+      print('Failed to load avatar for $username: $e');
+    }
   }
 
   void _connectWebSocket() {
     try {
       final wsUrl = apiUrl.replaceFirst('http', 'ws').replaceFirst('/api', '');
-      _wsChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      final uri = Uri.parse('$wsUrl?token=${_cachedToken}');
+      _wsChannel = WebSocketChannel.connect(uri);
+      
       _wsChannel!.stream.listen(
         (message) {
           final data = jsonDecode(message);
           if (data['type'] == 'message' && data['action'] == 'new' && data['channel'] == widget.channel) {
+            final username = data['from'];
+            if (username != null && !_avatarCache.containsKey(username)) {
+              _loadUserAvatar(username);
+            }
             setState(() {
               messages.add(data);
             });
@@ -685,8 +777,15 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     final json = jsonDecode(resp.body);
     if (json['success'] == true) {
+      final loadedMessages = json['messages'] ?? [];
+      for (final msg in loadedMessages) {
+        final username = msg['from'];
+        if (username != null && !_avatarCache.containsKey(username)) {
+          _loadUserAvatar(username);
+        }
+      }
       setState(() {
-        messages = json['messages'] ?? [];
+        messages = loadedMessages;
         loading = false;
       });
       _scrollToBottom();
@@ -798,7 +897,8 @@ class _ChatScreenState extends State<ChatScreen> {
       headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'},
       body: jsonEncode({'channel': widget.channel, 'voiceMessage': voiceId}),
     );
-    final msgJson = jsonDecode(await msgResp.body);    
+    final msgJson = jsonDecode(msgResp.body);
+    
     if (msgJson['success'] != true) {
       setState(() => error = msgJson['error'] ?? AppLocalizations.of(context)?.error ?? 'Voice send error');
     }
@@ -848,7 +948,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemBuilder: (_, i) {
                     final msg = messages[i];
                     return ListTile(
-                      leading: msg['from'] != null ? UserAvatar(username: msg['from'], token: widget.token) : null,
+                      leading: msg['from'] != null ? CachedUserAvatar(username: msg['from'] ?? '') : null,
                       title: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -949,6 +1049,31 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
+class CachedUserAvatar extends StatelessWidget {
+  final String username;
+  const CachedUserAvatar({required this.username});
+
+  @override
+  Widget build(BuildContext context) {
+    final cachedAvatarUrl = _avatarCache[username];
+    
+    if (cachedAvatarUrl != null) {
+      return CircleAvatar(
+        backgroundImage: NetworkImage(cachedAvatarUrl),
+        onBackgroundImageError: (exception, stackTrace) {},
+        child: null,
+      );
+    }
+    
+    final avatarUrl = '$apiUrl/user/$username/avatar?${DateTime.now().millisecondsSinceEpoch}';
+    return CircleAvatar(
+      backgroundImage: NetworkImage(avatarUrl),
+      onBackgroundImageError: (exception, stackTrace) {},
+      child: null,
+    );
+  }
+}
+
 Future<String> getDumbFolder({bool media = false}) async {
   Directory dir;
   if (Platform.isAndroid) {
@@ -962,20 +1087,6 @@ Future<String> getDumbFolder({bool media = false}) async {
   }
   if (!await dir.exists()) await dir.create(recursive: true);
   return dir.path;
-}
-
-class UserAvatar extends StatelessWidget {
-  final String username, token;
-  const UserAvatar({required this.username, required this.token});
-  @override
-  Widget build(BuildContext context) {
-    final avatarUrl = '$apiUrl/user/$username/avatar?${DateTime.now().millisecondsSinceEpoch}';
-    return CircleAvatar(
-      backgroundImage: NetworkImage(avatarUrl),
-      onBackgroundImageError: (exception, stackTrace) {},
-      child: null,
-    );
-  }
 }
 
 class SettingsScreen extends StatefulWidget {
@@ -1312,6 +1423,8 @@ Future<void> _loadAvatar() async {
             onTap: () async {
               final prefs = await SharedPreferences.getInstance();
               await prefs.remove('token');
+              _cachedToken = null;
+              _avatarCache.clear();
               Navigator.of(context).popUntil((r) => r.isFirst);
             },
           ),
@@ -1320,4 +1433,3 @@ Future<void> _loadAvatar() async {
     );
   }
 }
-
