@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:mime/mime.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
@@ -689,16 +691,54 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _voiceFilePath;
   WebSocketChannel? _wsChannel;
   final Map<String, String> _channelAvatarCache = {};
+  Codec _selectedCodec = Codec.pcm16WAV;
 
   @override
   void initState() {
     super.initState();
-    _recorder = FlutterSoundRecorder();
-    _recorder!.openRecorder();
+    _initRecorder();
     _loadMessages();
     _connectWebSocket();
     _preloadChannelAvatars();
   }
+
+  Future<void> _initRecorder() async {
+  try {
+    _recorder = FlutterSoundRecorder();
+    await _recorder!.openRecorder();
+    
+    var status = await Permission.microphone.request();
+    if (!status.isGranted) {
+      setState(() => error = 'Нет разрешения на использование микрофона');
+      return;
+    }
+
+    final codecsToTry = [
+      Codec.pcm16WAV,
+      Codec.aacADTS,
+      Codec.opusOGG,
+      Codec.vorbisOGG,
+    ];
+    
+    bool codecSupported = false;
+    
+    for (final codec in codecsToTry) {
+      if (await _recorder!.isEncoderSupported(codec)) {
+        _selectedCodec = codec;
+        codecSupported = true;
+        break;
+      }
+    }
+
+    if (!codecSupported) {
+      setState(() => error = 'Ни один из аудио-кодеков не поддерживается');
+      return;
+    }
+  } catch (e) {
+    print('Recorder init error: $e');
+    setState(() => error = 'Ошибка инициализации записи: $e');
+  }
+}
 
   void _preloadChannelAvatars() async {
     final resp = await http.get(
@@ -851,31 +891,105 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _startRecording() async {
-    var status = await Permission.microphone.request();
-    if (!status.isGranted) {
-      setState(() => error = AppLocalizations.of(context)?.error ?? 'No mic permission');
+  try {
+    if (_recorder == null) {
+      setState(() => error = 'Рекордер не инициализирован');
       return;
     }
-    Directory tempDir = await getTemporaryDirectory();
-    _voiceFilePath = '${tempDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.ogg';
-    await _recorder!.startRecorder(toFile: _voiceFilePath, codec: Codec.opusOGG);
-    setState(() => _isRecording = true);
-  }
 
-  Future<void> _stopRecordingAndSend() async {
+    if (_isRecording) {
+      return;
+    }
+
+    Directory tempDir = await getTemporaryDirectory();
+    final extension = _getFileExtension(_selectedCodec);
+    _voiceFilePath = '${tempDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.$extension';
+    
+    print('Начинаем запись в файл: $_voiceFilePath');
+    
+    await _recorder!.startRecorder(
+      toFile: _voiceFilePath!,
+      codec: _selectedCodec,
+    );
+    
+    await Future.delayed(Duration(milliseconds: 500));
+    
+    setState(() {
+      _isRecording = true;
+      error = '';
+    });
+    
+    print('Запись начата успешно');
+    
+  } catch (e) {
+    print('Recording error: $e');
+    setState(() => error = 'Ошибка записи: $e');
+  }
+}
+
+Future<void> _stopRecordingAndSend() async {
+  try {
+    if (_recorder == null || !_isRecording) {
+      setState(() => error = 'Рекордер не активен');
+      return;
+    }
+
+    print('Останавливаем запись...');
+    
     await _recorder!.stopRecorder();
     setState(() => _isRecording = false);
-    if (_voiceFilePath == null) return;
+    
+    if (_voiceFilePath == null) {
+      setState(() => error = 'Путь к файлу не найден');
+      return;
+    }
 
+    await Future.delayed(Duration(milliseconds: 500));
+
+    String? finalVoiceFilePath = _voiceFilePath;
+
+    // Конвертируем в Opus OGG если нужно
+    if (_selectedCodec != Codec.opusOGG) {
+      finalVoiceFilePath = await _convertToOpusOgg(_voiceFilePath!);
+      if (finalVoiceFilePath == null) {
+        setState(() => error = 'Ошибка конвертации в OGG');
+        return;
+      }
+    }
+
+    final file = File(finalVoiceFilePath!);
+    final fileSize = await file.length();
+    print('Размер записанного файла: $fileSize байт');
+    
+    if (fileSize <= 100) {
+      setState(() => error = 'Запись пуста (размер файла: $fileSize байт)');
+      await file.delete();
+      return;
+    }
+
+    // Получаем длительность через FFprobe
+    int durationSeconds = await _getAudioDuration(finalVoiceFilePath);
+    print('Длительность записи: $durationSeconds секунд');
+
+    if (durationSeconds == 0) {
+      setState(() => error = 'Не удалось определить длительность записи');
+      return;
+    }
+
+    print('Отправляем на сервер...');
     final resp = await http.post(
       Uri.parse('$apiUrl/voice/upload'),
       headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'},
-      body: jsonEncode({'channel': widget.channel, 'duration': 0}),
+      body: jsonEncode({
+        'channel': widget.channel,
+        'duration': durationSeconds
+      }),
     );
+    
     final jsonResp = jsonDecode(resp.body);
     
     if (jsonResp['success'] != true) {
-      setState(() => error = jsonResp['error'] ?? AppLocalizations.of(context)?.error ?? 'Voice upload error');
+      setState(() => error = jsonResp['error'] ?? 'Ошибка загрузки голоса');
       return;
     }
     
@@ -884,30 +998,138 @@ class _ChatScreenState extends State<ChatScreen> {
 
     var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
     request.headers['Authorization'] = 'Bearer ${widget.token}';
-    request.files.add(await http.MultipartFile.fromPath('file', _voiceFilePath!));
+    request.files.add(await http.MultipartFile.fromPath(
+      'file', 
+      finalVoiceFilePath,
+      filename: 'voice_${DateTime.now().millisecondsSinceEpoch}.ogg'
+    ));
+    
+    print('Загружаем файл на: $uploadUrl');
     var uploadResp = await request.send();
     
     if (uploadResp.statusCode != 200) {
-      setState(() => error = AppLocalizations.of(context)?.error ?? 'Voice upload error');
+      setState(() => error = 'Ошибка загрузки файла: ${uploadResp.statusCode}');
       return;
     }
 
     final msgResp = await http.post(
       Uri.parse('$apiUrl/message/voice-only'),
       headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'},
-      body: jsonEncode({'channel': widget.channel, 'voiceMessage': voiceId}),
+      body: jsonEncode({
+        'channel': widget.channel, 
+        'voiceMessage': voiceId
+      }),
     );
+    
     final msgJson = jsonDecode(msgResp.body);
     
     if (msgJson['success'] != true) {
-      setState(() => error = msgJson['error'] ?? AppLocalizations.of(context)?.error ?? 'Voice send error');
+      setState(() => error = msgJson['error'] ?? 'Ошибка отправки голосового сообщения');
+    } else {
+      print('Голосовое сообщение отправлено успешно!');
+      _voiceFilePath = null;
+      setState(() => error = '');
     }
+
+    // Очистка временных файлов
+    if (finalVoiceFilePath != _voiceFilePath) {
+      await File(finalVoiceFilePath).delete();
+    }
+    if (_voiceFilePath != null && File(_voiceFilePath!).existsSync()) {
+      await File(_voiceFilePath!).delete();
+    }
+  } catch (e) {
+    print('Voice send error: $e');
+    setState(() => error = 'Ошибка отправки голоса: $e');
   }
+}
+
+Future<int> _getAudioDuration(String filePath) async {
+  try {
+    final command = '-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$filePath"';
+    final session = await FFmpegKit.execute(command);
+    final output = await session.getOutput();
+    
+    if (output != null && output.isNotEmpty) {
+      final duration = double.tryParse(output.trim());
+      if (duration != null) {
+        return duration.ceil();
+      }
+    }
+    
+    // Fallback: проверяем размер файла для примерной оценки
+    final file = File(filePath);
+    final fileSize = await file.length();
+    // Примерная оценка: 1 секунда ≈ 8-16 KB для Opus
+    if (fileSize > 16000) return 2;
+    if (fileSize > 8000) return 1;
+    
+    return 0;
+  } catch (e) {
+    print('Error getting duration: $e');
+    return 0;
+  }
+}
+
+Future<String?> _convertToOpusOgg(String inputPath) async {
+  try {
+    final tempDir = await getTemporaryDirectory();
+    final outputPath = '${tempDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}_converted.ogg';
+    
+    // Улучшенные настройки для голосовых сообщений
+    final command = '-y -i "$inputPath" -c:a libopus -b:a 64k -vbr on -compression_level 10 -application voip -frame_duration 20 -packet_loss 1 "$outputPath"';
+    
+    final session = await FFmpegKit.execute(command);
+    final returnCode = await session.getReturnCode();
+    
+    if (returnCode?.isValueSuccess() ?? false) {
+      print('Конвертация успешна: $outputPath');
+      return outputPath;
+    } else {
+      print('Ошибка конвертации, код: ${returnCode?.getValue()}');
+      final output = await session.getOutput();
+      print('FFmpeg output: $output');
+      return null;
+    }
+  } catch (e) {
+    print('Ошибка при конвертации: $e');
+    return null;
+  }
+}
+
+String _getFileExtension(Codec codec) {
+  switch (codec) {
+    case Codec.opusOGG:
+    case Codec.vorbisOGG:
+      return 'ogg';
+    case Codec.pcm16WAV:
+      return 'wav';
+    case Codec.aacADTS:
+      return 'aac';
+    case Codec.mp3:
+      return 'mp3';
+    case Codec.flac:
+      return 'flac';
+    case Codec.opusCAF:
+      return 'caf';
+    case Codec.pcm16:
+    case Codec.pcm16AIFF:
+    case Codec.pcm16CAF:
+    default:
+      return 'wav';
+  }
+}
 
   Future<void> _playVoice(String url) async {
-    final player = AudioPlayer();
-    await player.setUrl(apiUrl.replaceFirst('/api', '') + url);
-    await player.play();
+    try {
+      final player = AudioPlayer();
+      final fullUrl = apiUrl.replaceFirst('/api', '') + url;
+      await player.setUrl(fullUrl);
+      await player.play();
+    } catch (e) {
+      print('Voice play error: $e');
+      setState(() => error = 'Ошибка воспроизведения: $e');
+    }
   }
 
   void _viewImage(String url, String filename) {
@@ -959,7 +1181,22 @@ class _ChatScreenState extends State<ChatScreen> {
                           if (msg['voice'] != null)
                             GestureDetector(
                               onTap: () => _playVoice(msg['voice']['downloadUrl']),
-                              child: Text('▶️ ${loc.sendMessage} (${msg['voice']['duration']?.toStringAsFixed(1) ?? ''} сек)', style: const TextStyle(color: Colors.blue)),
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.play_arrow, color: Colors.blue),
+                                    SizedBox(width: 8),
+                                    Text('Голосовое сообщение (${(msg['voice']['duration'] ?? 0).toStringAsFixed(1)} сек)',
+                                        style: TextStyle(color: Colors.blue)),
+                                  ],
+                                ),
+                              ),
                             ),
                         ],
                       ),
@@ -988,7 +1225,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         icon: Icon(_isRecording ? Icons.stop : Icons.mic),
                         onPressed: _isRecording ? _stopRecordingAndSend : _startRecording,
                         color: _isRecording ? Colors.red : Colors.blue,
-                        tooltip: 'Voice',
+                        tooltip: _isRecording ? 'Остановить запись' : 'Начать запись',
                       ),
                       Expanded(
                         child: TextField(
