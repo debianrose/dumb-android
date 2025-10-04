@@ -8,19 +8,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_localizations:
-    sdk: flutter
   http: ^1.1.0
   shared_preferences: ^2.2.2
-  file_picker: ^10.3.3
-  flutter_sound: ^9.2.8
-  just_audio: ^0.9.36
-  permission_handler: ^11.3.0
-  path_provider: ^2.1.2
-  video_player: ^2.8.3
+  file_picker: ^6.1.1
+  path_provider: ^2.1.1
+  just_audio: ^0.9.35
   mime: ^1.0.4
-  web_socket_channel: ^3.0.0
-  ffmpeg_kit_flutter_new_audio: ^1.1.0
+  flutter_localizations:
+    sdk: flutter
+  web_socket_channel: ^2.4.0
+  permission_handler: ^11.0.1
 
 dev_dependencies:
   flutter_test:
