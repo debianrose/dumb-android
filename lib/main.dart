@@ -11,7 +11,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:mime/mime.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:ogg_opus_player/ogg_opus_player.dart';
+import 'package:record/record.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
@@ -685,7 +685,7 @@ class _ChatScreenState extends State<ChatScreen> {
   String text = '', error = '';
   bool loading = true, sending = false;
   ScrollController scrollController = ScrollController();
-  OggOpusRecorder? _recorder;
+  final AudioRecorder _record = AudioRecorder();
   bool _isRecording = false;
   String? _audioPath;
   WebSocketChannel? _wsChannel;
@@ -764,7 +764,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
-    _recorder?.dispose();
+    _record.dispose();
     _wsChannel?.sink.close();
     super.dispose();
   }
@@ -851,29 +851,27 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _startRecording() async {
   try {
-    final tempDir = await getTemporaryDirectory();
-    final workDir = Directory('${tempDir.path}/ogg_opus_recorder');
-    if (!await workDir.exists()) {
-      await workDir.create(recursive: true);
+    if (await _record.hasPermission()) {
+      final tempDir = await getTemporaryDirectory();
+      _audioPath = '${tempDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.ogg';
+      
+         // Явное указание Opus кодеков
+      await _record.start(
+  RecordConfig(
+    encoder: AudioEncoder.opus,
+    bitRate: 128000,
+    sampleRate: 48000,
+  ),
+  path: _audioPath!,
+);   
+      setState(() {
+        _isRecording = true;
+        error = '';
+      });
+      print('🎯 Запись начата: $_audioPath');
+    } else {
+      setState(() => error = 'Нет разрешения на запись аудио');
     }
-    
-    _audioPath = '${workDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.ogg';
-    
-    // Создаем файл и директорию если нужно
-    final file = File(_audioPath!);
-    if (file.existsSync()) {
-      await file.delete();
-    }
-    await file.create(recursive: true);
-    
-    _recorder = OggOpusRecorder(_audioPath!);
-    await _recorder!.start();
-    
-    setState(() {
-      _isRecording = true;
-      error = '';
-    });
-    print('🎯 Запись начата: $_audioPath');
   } catch (e) {
     print('Recording start error: $e');
     setState(() => error = 'Ошибка начала записи: $e');
@@ -881,195 +879,186 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
   Future<void> _stopRecordingAndSend() async {
-  try {
-    if (_recorder == null) return;
-    
-    await _recorder!.stop();
-    setState(() => _isRecording = false);
-    
-    final duration = await _recorder!.duration();
-    print('🎯 Длительность записи: $duration секунд');
-    
-    _recorder?.dispose();
-    _recorder = null;
-    
-    if (_audioPath == null) {
-      setState(() => error = 'Не удалось сохранить запись');
-      return;
-    }
-
-    final file = File(_audioPath!);
-    
-    if (!file.existsSync()) {
-      setState(() => error = 'Файл записи не найден');
-      return;
-    }
-
-    final fileSize = await file.length();
-    print('🎯 Размер записанного файла: $fileSize байт');
-    
-    if (fileSize < 100) {
-      setState(() => error = 'Запись пуста или слишком короткая');
-      await file.delete();
-      return;
-    }
-
-    print('🎯 Шаг 1: Инициализация голосового сообщения...');
-    final initResponse = await http.post(
-      Uri.parse('$apiUrl/voice/upload'),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-        'Content-Type': 'application/json'
-      },
-      body: jsonEncode({
-        'channel': widget.channel,
-        'duration': duration
-      }),
-    );
-
-    print('🎯 Init response status: ${initResponse.statusCode}');
-    print('🎯 Init response body: ${initResponse.body}');
-
-    if (initResponse.statusCode != 200) {
-      setState(() => error = 'Ошибка инициализации: ${initResponse.statusCode}');
-      await file.delete();
-      return;
-    }
-
-    final initJson = jsonDecode(initResponse.body);
-    if (initJson['success'] != true) {
-      setState(() => error = initJson['error'] ?? 'Ошибка инициализации');
-      await file.delete();
-      return;
-    }
-
-    final voiceId = initJson['voiceId'];
-    final uploadUrl = initJson['uploadUrl'];
-
-    print('🎯 Voice ID: $voiceId');
-    print('🎯 Upload URL: $uploadUrl');
-
-    print('🎯 Шаг 2: Загрузка аудиофайла...');
-    
-    String fullUploadUrl;
-    if (uploadUrl.startsWith('/')) {
-      fullUploadUrl = apiUrl.replaceFirst('/api', '') + uploadUrl;
-    } else {
-      fullUploadUrl = '$apiUrl$uploadUrl';
-    }
-    
-    print('🎯 Full upload URL: $fullUploadUrl');
-    
     try {
-      var request = http.MultipartRequest('POST', Uri.parse(fullUploadUrl));
-      request.headers['Authorization'] = 'Bearer ${widget.token}';
+      if (!_isRecording) return;
       
-      request.files.add(await http.MultipartFile.fromPath(
-        'voice',
-        _audioPath!,
-        filename: voiceId,
-      ));
+      final path = await _record.stop();
+      setState(() => _isRecording = false);
+      
+      if (path == null) {
+        setState(() => error = 'Не удалось сохранить запись');
+        return;
+      }
 
-      final uploadResponse = await request.send();
-      final responseBody = await uploadResponse.stream.bytesToString();
+      final file = File(path);
       
-      print('🎯 Upload response status: ${uploadResponse.statusCode}');
-      print('🎯 Upload response body: $responseBody');
+      if (!file.existsSync()) {
+        setState(() => error = 'Файл записи не найден');
+        return;
+      }
+
+      final fileSize = await file.length();
+      print('🎯 Размер записанного файла: $fileSize байт');
       
-      if (uploadResponse.statusCode != 200) {
-        setState(() => error = 'Ошибка загрузки файла: ${uploadResponse.statusCode}');
+      if (fileSize < 100) {
+        setState(() => error = 'Запись пуста или слишком короткая');
         await file.delete();
         return;
       }
 
-      final uploadJson = jsonDecode(responseBody);
-      if (uploadJson['success'] != true) {
-        setState(() => error = uploadJson['error'] ?? 'Ошибка загрузки файла');
-        await file.delete();
-        return;
-      }
-
-      print('🎯 Файл успешно загружен!');
-
-      print('🎯 Шаг 3: Отправка голосового сообщения...');
-      final sendResponse = await http.post(
-        Uri.parse('$apiUrl/message/voice-only'),
+      print('🎯 Шаг 1: Инициализация голосового сообщения...');
+      final initResponse = await http.post(
+        Uri.parse('$apiUrl/voice/upload'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json'
         },
         body: jsonEncode({
           'channel': widget.channel,
-          'voiceMessage': voiceId
+          'duration': 0
         }),
       );
 
-      print('🎯 Send response status: ${sendResponse.statusCode}');
-      print('🎯 Send response body: ${sendResponse.body}');
+      print('🎯 Init response status: ${initResponse.statusCode}');
+      print('🎯 Init response body: ${initResponse.body}');
 
-      final sendJson = jsonDecode(sendResponse.body);
-      
-      if (sendJson['success'] == true) {
-        print('🎯 Голосовое сообщение отправлено успешно!');
-        setState(() => error = '');
-        _loadMessages();
-      } else {
-        setState(() => error = sendJson['error'] ?? 'Ошибка отправки сообщения');
+      if (initResponse.statusCode != 200) {
+        setState(() => error = 'Ошибка инициализации: ${initResponse.statusCode}');
+        await file.delete();
+        return;
       }
 
-    } catch (uploadError) {
-      print('🎯 Ошибка при загрузке файла: $uploadError');
-      setState(() => error = 'Ошибка загрузки: $uploadError');
-    }
+      final initJson = jsonDecode(initResponse.body);
+      if (initJson['success'] != true) {
+        setState(() => error = initJson['error'] ?? 'Ошибка инициализации');
+        await file.delete();
+        return;
+      }
 
-    await file.delete();
-    _audioPath = null;
-    
-  } catch (e) {
-    print('🎯 Общая ошибка отправки голоса: $e');
-    setState(() => error = 'Ошибка отправки голоса: $e');
+      final voiceId = initJson['voiceId'];
+      final uploadUrl = initJson['uploadUrl'];
+
+      print('🎯 Voice ID: $voiceId');
+      print('🎯 Upload URL: $uploadUrl');
+
+      print('🎯 Шаг 2: Загрузка аудиофайла...');
+      
+      String fullUploadUrl;
+      if (uploadUrl.startsWith('/')) {
+        fullUploadUrl = apiUrl.replaceFirst('/api', '') + uploadUrl;
+      } else {
+        fullUploadUrl = '$apiUrl$uploadUrl';
+      }
+      
+      print('🎯 Full upload URL: $fullUploadUrl');
+      
+      try {
+        var request = http.MultipartRequest('POST', Uri.parse(fullUploadUrl));
+        request.headers['Authorization'] = 'Bearer ${widget.token}';
+        
+        request.files.add(await http.MultipartFile.fromPath(
+          'voice',
+          path,
+          filename: voiceId,
+        ));
+
+        final uploadResponse = await request.send();
+        final responseBody = await uploadResponse.stream.bytesToString();
+        
+        print('🎯 Upload response status: ${uploadResponse.statusCode}');
+        print('🎯 Upload response body: $responseBody');
+        
+        if (uploadResponse.statusCode != 200) {
+          setState(() => error = 'Ошибка загрузки файла: ${uploadResponse.statusCode}');
+          await file.delete();
+          return;
+        }
+
+        final uploadJson = jsonDecode(responseBody);
+        if (uploadJson['success'] != true) {
+          setState(() => error = uploadJson['error'] ?? 'Ошибка загрузки файла');
+          await file.delete();
+          return;
+        }
+
+        print('🎯 Файл успешно загружен!');
+
+        print('🎯 Шаг 3: Отправка голосового сообщения...');
+        final sendResponse = await http.post(
+          Uri.parse('$apiUrl/message/voice-only'),
+          headers: {
+            'Authorization': 'Bearer ${widget.token}',
+            'Content-Type': 'application/json'
+          },
+          body: jsonEncode({
+            'channel': widget.channel,
+            'voiceMessage': voiceId
+          }),
+        );
+
+        print('🎯 Send response status: ${sendResponse.statusCode}');
+        print('🎯 Send response body: ${sendResponse.body}');
+
+        final sendJson = jsonDecode(sendResponse.body);
+        
+        if (sendJson['success'] == true) {
+          print('🎯 Голосовое сообщение отправлено успешно!');
+          setState(() => error = '');
+          _loadMessages();
+        } else {
+          setState(() => error = sendJson['error'] ?? 'Ошибка отправки сообщения');
+        }
+
+      } catch (uploadError) {
+        print('🎯 Ошибка при загрузке файла: $uploadError');
+        setState(() => error = 'Ошибка загрузки: $uploadError');
+      }
+
+      await file.delete();
+      _audioPath = null;
+      
+    } catch (e) {
+      print('🎯 Общая ошибка отправки голоса: $e');
+      setState(() => error = 'Ошибка отправки голоса: $e');
+    }
   }
-}
 
   Future<void> _playVoice(String url) async {
-  try {
-    final player = AudioPlayer();
-    
-    // Формируем правильный URL
-    String fullUrl;
-    if (url.startsWith('/')) {
-      fullUrl = apiUrl.replaceFirst('/api', '') + url;
-    } else if (url.startsWith('http')) {
-      fullUrl = url;
-    } else {
-      fullUrl = apiUrl.replaceFirst('/api', '') + '/api/download/' + url;
-    }
-    
-    print('🎯 Playing voice from: $fullUrl');
-    
-    await player.setUrl(fullUrl);
-    await player.play();
-    
-    // Слушаем состояние воспроизведения
-    player.playerStateStream.listen((state) async {
-      if (state.processingState == ProcessingState.completed) {
+    try {
+      final player = AudioPlayer();
+      
+      String fullUrl;
+      if (url.startsWith('/')) {
+        fullUrl = apiUrl.replaceFirst('/api', '') + url;
+      } else if (url.startsWith('http')) {
+        fullUrl = url;
+      } else {
+        fullUrl = apiUrl.replaceFirst('/api', '') + '/api/download/' + url;
+      }
+      
+      print('🎯 Playing voice from: $fullUrl');
+      
+      await player.setUrl(fullUrl);
+      await player.play();
+      
+      player.playerStateStream.listen((state) async {
+        if (state.processingState == ProcessingState.completed) {
+          await player.dispose();
+        }
+      });
+      
+      Future.delayed(Duration(seconds: 30), () async {
+        if (player.playing) {
+          await player.stop();
+        }
         await player.dispose();
-      }
-    });
-    
-    // Автоматически освобождаем ресурсы через 30 секунд на всякий случай
-    Future.delayed(Duration(seconds: 30), () async {
-      if (player.playing) {
-        await player.stop();
-      }
-      await player.dispose();
-    });
-    
-  } catch (e) {
-    print('Voice play error: $e');
-    setState(() => error = 'Ошибка воспроизведения: $e');
+      });
+      
+    } catch (e) {
+      print('Voice play error: $e');
+      setState(() => error = 'Ошибка воспроизведения: $e');
+    }
   }
-}
 
   void _viewImage(String url, String filename) {
     showDialog(
@@ -1095,99 +1084,104 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageFile(Map file) {
-  final mime = file['mimetype'] ?? '';
-  final url = file['downloadUrl'];
-  final filename = file['originalName'] ?? 'file';
-  
-  final isVoiceMessage = filename.endsWith('.ogg') || 
-                        filename.endsWith('.opus') || 
-                        mime.contains('audio/ogg') ||
-                        mime.contains('audio/opus');
+    final mime = file['mimetype'] ?? '';
+    final url = file['downloadUrl'];
+    final filename = file['originalName'] ?? 'file';
+    
+    final isVoiceMessage = filename.endsWith('.ogg') || 
+                      filename.endsWith('.opus') || 
+                      mime.contains('audio/ogg') ||
+                      mime.contains('audio/opus');    
 
-  if (isVoiceMessage) {
+    if (isVoiceMessage) {
+      return GestureDetector(
+        onTap: () => _playVoice(url),
+        child: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.play_arrow, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Голосовое сообщение'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (mime.startsWith('image/')) {
+      return GestureDetector(
+        onTap: () => _viewImage(url, filename),
+        child: Image.network(apiUrl.replaceFirst('/api', '') + url, width: 200),
+      );
+    }
+
+    if (mime.startsWith('video/')) {
+      return GestureDetector(
+        onTap: () => _playVideo(url),
+        child: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.play_arrow, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Видео: $filename'),
+            ],
+          ),
+        ),
+      );
+    }
+
     return GestureDetector(
-      onTap: () => _playVoice(url),
+      onTap: () => _downloadFile(url, filename),
       child: Container(
         padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
+          color: Colors.grey.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.play_arrow, color: Colors.blue),
+            Icon(Icons.insert_drive_file),
             SizedBox(width: 8),
-            Text('Голосовое сообщение'),
+            Text(filename),
           ],
         ),
       ),
     );
   }
-
-  if (mime.startsWith('image/')) {
-    return GestureDetector(
-      onTap: () => _viewImage(url, filename),
-      child: Image.network(apiUrl.replaceFirst('/api', '') + url, width: 200),
-    );
-  }
-
-  if (mime.startsWith('video/')) {
-    return GestureDetector(
-      onTap: () => _playVideo(url),
-      child: Container(
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.play_arrow, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Видео: $filename'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  return GestureDetector(
-    onTap: () => _downloadFile(url, filename),
-    child: Container(
-      padding: EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.file_download),
-          SizedBox(width: 8),
-          Text(filename),
-        ],
-      ),
-    ),
-  );
-}
 
   Future<void> _playVideo(String url) async {
-    // TODO: Implement video player
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Video playback not implemented yet'))
+      SnackBar(content: Text('Воспроизведение видео будет реализовано позже'))
     );
   }
 
   Future<void> _downloadFile(String url, String filename) async {
-    final saveDir = await getDumbFolder(media: false);
-    final file = File('$saveDir/$filename');
-    final resp = await http.get(Uri.parse(apiUrl.replaceFirst('/api', '') + url));
-    await file.writeAsBytes(resp.bodyBytes);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved to ${file.path}'))
-    );
+    try {
+      final response = await http.get(Uri.parse(apiUrl.replaceFirst('/api', '') + url));
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/$filename');
+      await file.writeAsBytes(response.bodyBytes);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Файл сохранен: ${file.path}'))
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка загрузки: $e'))
+      );
+    }
   }
 
   @override
@@ -1199,60 +1193,59 @@ class _ChatScreenState extends State<ChatScreen> {
         if (error.isNotEmpty) 
           Padding(padding: const EdgeInsets.all(8.0), child: Text(error, style: const TextStyle(color: Colors.red))),
         Expanded(
-          child: loading 
-            ? Center(child: Text(loc.loading))
-            : ListView.builder(
-                controller: scrollController,
-                itemCount: messages.length,
-                itemBuilder: (_, i) {
-                  final msg = messages[i];
-                  final username = msg['from'] ?? '';
-                  final avatarUrl = _avatarCache[username];
-                  
-                  return ListTile(
-                    leading: avatarUrl != null 
-                      ? CircleAvatar(backgroundImage: NetworkImage(avatarUrl))
-                      : CircleAvatar(child: Text(username.isNotEmpty ? username[0].toUpperCase() : '?')),
-                    title: Text(username),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (msg['text'] != null && msg['text'].isNotEmpty) 
-                          Text(msg['text']),
-                        if (msg['file'] != null) 
-                          _buildMessageFile(msg['file']),
-                        if (msg['voiceMessage'] != null)
-                          GestureDetector(
-                            onTap: () => _playVoice(msg['voiceMessage']),
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.play_arrow, color: Colors.blue),
-                                  SizedBox(width: 8),
-                                  Text('Голосовое сообщение'),
-                                ],
+          child: loading
+              ? Center(child: Text(loc.loading))
+              : ListView.builder(
+                  controller: scrollController,
+                  itemCount: messages.length,
+                  itemBuilder: (_, i) {
+                    final msg = messages[i];
+                    final username = msg['from'];
+                    final avatarUrl = username != null ? _avatarCache[username] : null;
+                    
+                    return ListTile(
+                      leading: avatarUrl != null 
+                          ? CircleAvatar(backgroundImage: NetworkImage(avatarUrl))
+                          : CircleAvatar(child: Text(username?.substring(0, 1) ?? '?')),
+                      title: Text(username ?? ''),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (msg['text'] != null && msg['text'].isNotEmpty) 
+                            Text(msg['text']),
+                          if (msg['file'] != null) 
+                            _buildMessageFile(msg['file']),
+                          if (msg['voiceMessage'] != null)
+                            GestureDetector(
+                              onTap: () => _playVoice(msg['voiceMessage']),
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.play_arrow, color: Colors.blue),
+                                    SizedBox(width: 8),
+                                    Text('Голосовое сообщение'),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        Text(DateTime.parse(msg['timestamp'] ?? '').toLocal().toString()),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(children: [
             Expanded(
               child: TextField(
-                decoration: InputDecoration(labelText: loc.message),
+                decoration: InputDecoration(labelText: loc.typeMessage),
                 onChanged: (v) => text = v,
                 onSubmitted: (_) => _sendMessage(),
               ),
@@ -1266,7 +1259,10 @@ class _ChatScreenState extends State<ChatScreen> {
               icon: const Icon(Icons.attach_file), 
               onPressed: _sendFile,
             ),
-            if (sending) const CircularProgressIndicator() else IconButton(icon: const Icon(Icons.send), onPressed: _sendMessage),
+            IconButton(
+              icon: sending ? const CircularProgressIndicator() : const Icon(Icons.send), 
+              onPressed: sending ? null : _sendMessage,
+            ),
           ]),
         ),
       ]),
@@ -1280,13 +1276,7 @@ class SettingsScreen extends StatefulWidget {
   final void Function(ThemeMode) setTheme;
   final void Function(String) setServerUrl;
   final ThemeMode themeMode;
-  const SettingsScreen({
-    required this.token,
-    required this.setLocale,
-    required this.setTheme,
-    required this.setServerUrl,
-    required this.themeMode,
-  });
+  const SettingsScreen({required this.token, required this.setLocale, required this.setTheme, required this.setServerUrl, required this.themeMode});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -1295,17 +1285,20 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   String username = '', email = '', error = '', serverUrl = apiUrl;
   bool loading = true, twoFactorEnabled = false;
-  Uint8List? avatarBytes;
-  bool avatarLoading = false;
+  String twoFactorSecret = '', twoFactorQrCode = '';
+  Locale? selectedLocale;
+  ThemeMode selectedThemeMode = ThemeMode.system;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    serverUrl = apiUrl;
+    selectedThemeMode = widget.themeMode;
   }
 
   Future<void> _loadProfile() async {
-    final resp = await http.get(Uri.parse('$apiUrl/user'), headers: {'Authorization': 'Bearer ${widget.token}'});
+    final resp = await http.get(Uri.parse('$apiUrl/user/profile'), headers: {'Authorization': 'Bearer ${widget.token}'});
     final json = jsonDecode(resp.body);
     if (json['success'] == true) {
       setState(() {
@@ -1322,62 +1315,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _pickAvatar() async {
-    final res = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (res == null || res.files.isEmpty) return;
-    final bytes = res.files.single.bytes;
-    if (bytes == null) return;
-    setState(() => avatarBytes = bytes);
-    await _uploadAvatar();
-  }
-
-  Future<void> _uploadAvatar() async {
-    if (avatarBytes == null) return;
-    setState(() => avatarLoading = true);
-    var req = http.MultipartRequest('POST', Uri.parse('$apiUrl/user/avatar'));
-    req.headers['Authorization'] = 'Bearer ${widget.token}';
-    req.files.add(http.MultipartFile.fromBytes('avatar', avatarBytes!, filename: 'avatar.png'));
-    var resp = await req.send();
-    var json = jsonDecode(await resp.stream.bytesToString());
+  Future<void> _enable2FA() async {
+    final resp = await http.post(Uri.parse('$apiUrl/2fa/setup'), headers: {'Authorization': 'Bearer ${widget.token}'});
+    final json = jsonDecode(resp.body);
     if (json['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)?.avatarUpdated ?? 'Avatar updated')));
+      setState(() {
+        twoFactorSecret = json['secret'] ?? '';
+        twoFactorQrCode = json['qrCode'] ?? '';
+      });
     } else {
-      setState(() => error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Upload error');
+      setState(() => error = json['error'] ?? AppLocalizations.of(context)?.error ?? '2FA setup error');
     }
-    setState(() => avatarLoading = false);
   }
 
-  void _changePassword() {
-    showDialog(
-      context: context,
-      builder: (context) => ChangePasswordDialog(token: widget.token),
+  Future<void> _disable2FA() async {
+    final resp = await http.post(Uri.parse('$apiUrl/2fa/disable'), headers: {'Authorization': 'Bearer ${widget.token}'});
+    final json = jsonDecode(resp.body);
+    if (json['success'] == true) {
+      setState(() => twoFactorEnabled = false);
+    } else {
+      setState(() => error = json['error'] ?? AppLocalizations.of(context)?.error ?? '2FA disable error');
+    }
+  }
+
+  void _saveServerUrl() {
+    widget.setServerUrl(serverUrl);
+    apiUrl = serverUrl;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('URL сервера обновлен'))
     );
   }
 
-  void _setup2FA() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => TwoFactorSetupScreen(token: widget.token),
-      ),
-    );
+  void _changeLanguage(Locale? locale) {
+    if (locale != null) {
+      widget.setLocale(locale);
+      setState(() => selectedLocale = locale);
+    }
+  }
+
+  void _changeTheme(ThemeMode? mode) {
+    if (mode != null) {
+      widget.setTheme(mode);
+      setState(() => selectedThemeMode = mode);
+    }
   }
 
   void _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     _cachedToken = null;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AuthGate(
-          setLocale: widget.setLocale,
-          setTheme: widget.setTheme,
-          setServerUrl: widget.setServerUrl,
-          themeMode: widget.themeMode,
-        ),
-      ),
-    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AuthGate(
+      setLocale: widget.setLocale,
+      setTheme: widget.setTheme,
+      setServerUrl: widget.setServerUrl,
+      themeMode: widget.themeMode,
+    )));
   }
 
   @override
@@ -1390,351 +1382,88 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                if (error.isNotEmpty) 
-                  Padding(padding: const EdgeInsets.only(bottom: 16), child: Text(error, style: const TextStyle(color: Colors.red))),
-                Center(
-                  child: Column(children: [
-                    GestureDetector(
-                      onTap: _pickAvatar,
-                      child: avatarLoading
-                          ? const CircularProgressIndicator()
-                          : CircleAvatar(
-                              radius: 50,
-                              backgroundImage: avatarBytes != null ? MemoryImage(avatarBytes!) : null,
-                              child: avatarBytes == null ? const Icon(Icons.person, size: 40) : null,
-                            ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(username, style: Theme.of(context).textTheme.headlineSmall),
-                    Text(email),
-                  ]),
+                Text(loc.profile, style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 16),
+                TextFormField(
+                  initialValue: username,
+                  decoration: InputDecoration(labelText: loc.username),
+                  readOnly: true,
                 ),
-                const SizedBox(height: 32),
-                ListTile(
-                  title: Text(loc.changePassword),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: _changePassword,
+                TextFormField(
+                  initialValue: email,
+                  decoration: InputDecoration(labelText: 'Email'),
+                  readOnly: true,
                 ),
-                ListTile(
-                  title: Text('2FA ${twoFactorEnabled ? loc.enabled : loc.disabled}'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: _setup2FA,
-                ),
-                const Divider(),
-                ListTile(
-                  title: Text(loc.language),
-                  subtitle: Text(_getCurrentLanguageName(context)),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => _showLanguageDialog(context),
-                ),
-                ListTile(
-                  title: Text(loc.theme),
-                  subtitle: Text(_getThemeName(widget.themeMode, context)),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => _showThemeDialog(context),
-                ),
-                ListTile(
-                  title: Text(loc.serverUrl),
-                  subtitle: Text(serverUrl),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => _showServerUrlDialog(context),
-                ),
-                const Divider(),
-                ListTile(
-                  title: Text(loc.logout, style: const TextStyle(color: Colors.red)),
-                  onTap: _logout,
-                ),
-              ],
-            ),
-    );
-  }
-
-  String _getCurrentLanguageName(BuildContext context) {
-    final locale = Localizations.localeOf(context);
-    switch (locale.languageCode) {
-      case 'en': return 'English';
-      case 'ru': return 'Русский';
-      default: return 'English';
-    }
-  }
-
-  String _getThemeName(ThemeMode mode, BuildContext context) {
-    switch (mode) {
-      case ThemeMode.light: return AppLocalizations.of(context)!.light;
-      case ThemeMode.dark: return AppLocalizations.of(context)!.dark;
-      case ThemeMode.system: return AppLocalizations.of(context)!.system;
-    }
-  }
-
-  void _showLanguageDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.language),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text('English'),
-              onTap: () {
-                widget.setLocale(const Locale('en'));
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: Text('Русский'),
-              onTap: () {
-                widget.setLocale(const Locale('ru'));
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showThemeDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.theme),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.light),
-              onTap: () {
-                widget.setTheme(ThemeMode.light);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.dark),
-              onTap: () {
-                widget.setTheme(ThemeMode.dark);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.system),
-              onTap: () {
-                widget.setTheme(ThemeMode.system);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showServerUrlDialog(BuildContext context) {
-    final controller = TextEditingController(text: serverUrl);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.serverUrl),
-        content: TextField(controller: controller),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newUrl = controller.text.trim();
-              if (newUrl.isNotEmpty) {
-                setState(() => serverUrl = newUrl);
-                widget.setServerUrl(newUrl);
-                apiUrl = '$newUrl/api';
-                Navigator.pop(context);
-              }
-            },
-            child: Text(AppLocalizations.of(context)!.save),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ChangePasswordDialog extends StatefulWidget {
-  final String token;
-  const ChangePasswordDialog({required this.token});
-
-  @override
-  State<ChangePasswordDialog> createState() => _ChangePasswordDialogState();
-}
-
-class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
-  String currentPassword = '', newPassword = '', error = '';
-  bool loading = false;
-
-  Future<void> _changePassword() async {
-    if (newPassword.isEmpty) return;
-    setState(() => loading = true);
-    final resp = await http.post(
-      Uri.parse('$apiUrl/user/change-password'), 
-      headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, 
-      body: jsonEncode({'currentPassword': currentPassword, 'newPassword': newPassword})
-    );
-    final json = jsonDecode(resp.body);
-    if (json['success'] == true) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)?.passwordChanged ?? 'Password changed'))
-      );
-    } else {
-      setState(() {
-        error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Error';
-        loading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(AppLocalizations.of(context)!.changePassword),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            decoration: InputDecoration(labelText: AppLocalizations.of(context)!.currentPassword),
-            obscureText: true,
-            onChanged: (v) => currentPassword = v,
-          ),
-          TextField(
-            decoration: InputDecoration(labelText: AppLocalizations.of(context)!.newPassword),
-            obscureText: true,
-            onChanged: (v) => newPassword = v,
-          ),
-          if (error.isNotEmpty) 
-            Padding(padding: const EdgeInsets.only(top: 10), child: Text(error, style: const TextStyle(color: Colors.red))),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context)!.cancel),
-        ),
-        ElevatedButton(
-          onPressed: loading ? null : _changePassword,
-          child: loading ? const CircularProgressIndicator() : Text(AppLocalizations.of(context)!.change),
-        ),
-      ],
-    );
-  }
-}
-
-class TwoFactorSetupScreen extends StatefulWidget {
-  final String token;
-  const TwoFactorSetupScreen({required this.token});
-
-  @override
-  State<TwoFactorSetupScreen> createState() => _TwoFactorSetupScreenState();
-}
-
-class _TwoFactorSetupScreenState extends State<TwoFactorSetupScreen> {
-  String qrCodeUrl = '', secret = '', token = '', error = '';
-  bool loading = true, verifying = false, twoFactorEnabled = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load2FASetup();
-  }
-
-  Future<void> _load2FASetup() async {
-    final resp = await http.get(Uri.parse('$apiUrl/2fa/setup'), headers: {'Authorization': 'Bearer ${widget.token}'});
-    final json = jsonDecode(resp.body);
-    if (json['success'] == true) {
-      setState(() {
-        qrCodeUrl = json['qrCodeUrl'] ?? '';
-        secret = json['secret'] ?? '';
-        loading = false;
-      });
-    } else {
-      setState(() {
-        error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Error';
-        loading = false;
-      });
-    }
-  }
-
-  Future<void> _verify2FA() async {
-    if (token.isEmpty) return;
-    setState(() => verifying = true);
-    final resp = await http.post(
-      Uri.parse('$apiUrl/2fa/verify'), 
-      headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, 
-      body: jsonEncode({'token': token})
-    );
-    final json = jsonDecode(resp.body);
-    if (json['success'] == true) {
-      setState(() => twoFactorEnabled = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('2FA enabled'))
-      );
-    } else {
-      setState(() {
-        error = json['error'] ?? 'Verification failed';
-        verifying = false;
-      });
-    }
-  }
-
-  Future<void> _disable2FA() async {
-    final resp = await http.post(
-      Uri.parse('$apiUrl/2fa/disable'), 
-      headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'}, 
-      body: jsonEncode({})
-    );
-    final json = jsonDecode(resp.body);
-    if (json['success'] == true) {
-      setState(() => twoFactorEnabled = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('2FA disabled'))
-      );
-    } else {
-      setState(() => error = json['error'] ?? 'Disable failed');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('2FA Setup')),
-      body: loading
-          ? Center(child: Text(AppLocalizations.of(context)?.loading ?? 'Loading...'))
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (error.isNotEmpty) 
-                  Padding(padding: const EdgeInsets.only(bottom: 16), child: Text(error, style: const TextStyle(color: Colors.red))),
-                if (!twoFactorEnabled) ...[
-                  Text('Scan QR code with your authenticator app:'),
-                  if (qrCodeUrl.isNotEmpty) Image.network(qrCodeUrl),
-                  Text('Secret: $secret'),
-                  TextField(
-                    decoration: InputDecoration(labelText: 'Verification code'),
-                    onChanged: (v) => token = v,
+                const SizedBox(height: 24),
+                Text('Двухфакторная аутентификация', style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 16),
+                if (twoFactorEnabled)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('2FA включена'),
+                      ElevatedButton(
+                        onPressed: _disable2FA,
+                        child: Text('Отключить 2FA'),
+                      ),
+                    ],
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('2FA отключена'),
+                      ElevatedButton(
+                        onPressed: _enable2FA,
+                        child: Text('Включить 2FA'),
+                      ),
+                      if (twoFactorQrCode.isNotEmpty) Image.network(twoFactorQrCode),
+                      if (twoFactorSecret.isNotEmpty) Text('Secret: $twoFactorSecret'),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  verifying
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                          onPressed: _verify2FA,
-                          child: Text('Verify and Enable'),
-                        ),
-                ] else ...[
-                  Text('2FA is enabled'),
-                  ElevatedButton(
-                    onPressed: _disable2FA,
-                    child: Text('Disable 2FA'),
-                  ),
-                ],
+                const SizedBox(height: 24),
+                Text('Внешний вид', style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<Locale>(
+                  value: selectedLocale,
+                  items: AppLocalizations.supportedLocales.map((locale) {
+                    return DropdownMenuItem(
+                      value: locale,
+                      child: Text('${locale.languageCode.toUpperCase()}'),
+                    );
+                  }).toList(),
+                  onChanged: _changeLanguage,
+                  decoration: InputDecoration(labelText: 'Язык'),
+                ),
+                DropdownButtonFormField<ThemeMode>(
+                  value: selectedThemeMode,
+                  items: [
+                    DropdownMenuItem(value: ThemeMode.system, child: Text('Системная')),
+                    DropdownMenuItem(value: ThemeMode.light, child: Text('Светлая')),
+                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Темная')),
+                  ],
+                  onChanged: _changeTheme,
+                  decoration: InputDecoration(labelText: 'Тема'),
+                ),
+                const SizedBox(height: 24),
+                Text('Сервер', style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 16),
+                TextFormField(
+                  initialValue: serverUrl,
+                  decoration: InputDecoration(labelText: 'URL сервера'),
+                  onChanged: (v) => serverUrl = v,
+                ),
+                ElevatedButton(
+                  onPressed: _saveServerUrl,
+                  child: Text('Сохранить'),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _logout,
+                  child: Text(loc.logout),
+                ),
+                if (error.isNotEmpty) 
+                  Padding(padding: const EdgeInsets.only(top: 10), child: Text(error, style: const TextStyle(color: Colors.red))),
               ],
             ),
     );
@@ -1744,6 +1473,6 @@ class _TwoFactorSetupScreenState extends State<TwoFactorSetupScreen> {
 Future<String> getDumbFolder({bool media = false}) async {
   final dir = await getApplicationDocumentsDirectory();
   final dumbDir = Directory('${dir.path}/Dumb/${media ? 'Media' : 'Files'}');
-  if (!await dumbDir.exists()) await dumbDir.create(recursive: true);
+  if (!dumbDir.existsSync()) dumbDir.createSync(recursive: true);
   return dumbDir.path;
 }
