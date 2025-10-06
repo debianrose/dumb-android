@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -855,7 +854,6 @@ class _ChatScreenState extends State<ChatScreen> {
       final tempDir = await getTemporaryDirectory();
       _audioPath = '${tempDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.ogg';
       
-         // Явное указание Opus кодеков
       await _record.start(
   RecordConfig(
     encoder: AudioEncoder.opus,
@@ -868,7 +866,6 @@ class _ChatScreenState extends State<ChatScreen> {
         _isRecording = true;
         error = '';
       });
-      print('🎯 Запись начата: $_audioPath');
     } else {
       setState(() => error = 'Нет разрешения на запись аудио');
     }
@@ -898,7 +895,6 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       final fileSize = await file.length();
-      print('🎯 Размер записанного файла: $fileSize байт');
       
       if (fileSize < 100) {
         setState(() => error = 'Запись пуста или слишком короткая');
@@ -906,7 +902,6 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
 
-      print('🎯 Шаг 1: Инициализация голосового сообщения...');
       final initResponse = await http.post(
         Uri.parse('$apiUrl/voice/upload'),
         headers: {
@@ -918,9 +913,6 @@ class _ChatScreenState extends State<ChatScreen> {
           'duration': 0
         }),
       );
-
-      print('🎯 Init response status: ${initResponse.statusCode}');
-      print('🎯 Init response body: ${initResponse.body}');
 
       if (initResponse.statusCode != 200) {
         setState(() => error = 'Ошибка инициализации: ${initResponse.statusCode}');
@@ -938,19 +930,12 @@ class _ChatScreenState extends State<ChatScreen> {
       final voiceId = initJson['voiceId'];
       final uploadUrl = initJson['uploadUrl'];
 
-      print('🎯 Voice ID: $voiceId');
-      print('🎯 Upload URL: $uploadUrl');
-
-      print('🎯 Шаг 2: Загрузка аудиофайла...');
-      
       String fullUploadUrl;
       if (uploadUrl.startsWith('/')) {
         fullUploadUrl = apiUrl.replaceFirst('/api', '') + uploadUrl;
       } else {
         fullUploadUrl = '$apiUrl$uploadUrl';
       }
-      
-      print('🎯 Full upload URL: $fullUploadUrl');
       
       try {
         var request = http.MultipartRequest('POST', Uri.parse(fullUploadUrl));
@@ -965,9 +950,6 @@ class _ChatScreenState extends State<ChatScreen> {
         final uploadResponse = await request.send();
         final responseBody = await uploadResponse.stream.bytesToString();
         
-        print('🎯 Upload response status: ${uploadResponse.statusCode}');
-        print('🎯 Upload response body: $responseBody');
-        
         if (uploadResponse.statusCode != 200) {
           setState(() => error = 'Ошибка загрузки файла: ${uploadResponse.statusCode}');
           await file.delete();
@@ -981,9 +963,6 @@ class _ChatScreenState extends State<ChatScreen> {
           return;
         }
 
-        print('🎯 Файл успешно загружен!');
-
-        print('🎯 Шаг 3: Отправка голосового сообщения...');
         final sendResponse = await http.post(
           Uri.parse('$apiUrl/message/voice-only'),
           headers: {
@@ -996,13 +975,9 @@ class _ChatScreenState extends State<ChatScreen> {
           }),
         );
 
-        print('🎯 Send response status: ${sendResponse.statusCode}');
-        print('🎯 Send response body: ${sendResponse.body}');
-
         final sendJson = jsonDecode(sendResponse.body);
         
         if (sendJson['success'] == true) {
-          print('🎯 Голосовое сообщение отправлено успешно!');
           setState(() => error = '');
           _loadMessages();
         } else {
@@ -1010,7 +985,6 @@ class _ChatScreenState extends State<ChatScreen> {
         }
 
       } catch (uploadError) {
-        print('🎯 Ошибка при загрузке файла: $uploadError');
         setState(() => error = 'Ошибка загрузки: $uploadError');
       }
 
@@ -1018,7 +992,6 @@ class _ChatScreenState extends State<ChatScreen> {
       _audioPath = null;
       
     } catch (e) {
-      print('🎯 Общая ошибка отправки голоса: $e');
       setState(() => error = 'Ошибка отправки голоса: $e');
     }
   }
@@ -1035,8 +1008,6 @@ class _ChatScreenState extends State<ChatScreen> {
       } else {
         fullUrl = apiUrl.replaceFirst('/api', '') + '/api/download/' + url;
       }
-      
-      print('🎯 Playing voice from: $fullUrl');
       
       await player.setUrl(fullUrl);
       await player.play();
@@ -1055,7 +1026,6 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       
     } catch (e) {
-      print('Voice play error: $e');
       setState(() => error = 'Ошибка воспроизведения: $e');
     }
   }
@@ -1090,8 +1060,10 @@ class _ChatScreenState extends State<ChatScreen> {
     
     final isVoiceMessage = filename.endsWith('.ogg') || 
                       filename.endsWith('.opus') || 
+                      filename.endsWith('.wav') ||
                       mime.contains('audio/ogg') ||
-                      mime.contains('audio/opus');    
+                      mime.contains('audio/opus') ||
+                      mime.contains('audio/wav');    
 
     if (isVoiceMessage) {
       return GestureDetector(
@@ -1215,9 +1187,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             Text(msg['text']),
                           if (msg['file'] != null) 
                             _buildMessageFile(msg['file']),
-                          if (msg['voiceMessage'] != null)
+                          if (msg['voice'] != null)
                             GestureDetector(
-                              onTap: () => _playVoice(msg['voiceMessage']),
+                              onTap: () => _playVoice(msg['voice']['downloadUrl']),
                               child: Container(
                                 padding: EdgeInsets.all(8),
                                 decoration: BoxDecoration(
@@ -1230,6 +1202,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                     Icon(Icons.play_arrow, color: Colors.blue),
                                     SizedBox(width: 8),
                                     Text('Голосовое сообщение'),
+                                    if (msg['voice']['duration'] != null && msg['voice']['duration'] > 0)
+                                      Text(' (${(msg['voice']['duration'] / 1000).toStringAsFixed(1)}с)'),
                                   ],
                                 ),
                               ),

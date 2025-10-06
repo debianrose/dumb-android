@@ -1,15 +1,18 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "org.debianrose.dumb"
     compileSdk = 36
-    ndkVersion = "27.1.12297006"  
+    ndkVersion = "27.1.12297006"
     buildToolsVersion = "35.0.0"
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -21,26 +24,27 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "org.debianrose.dumb"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 29
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
         ndk {
-        	abiFilters += listOf("arm64-v8a")
+            abiFilters += listOf("arm64-v8a")
         }
     }
-    
 
     buildTypes {
         release {
-      }
+            buildConfigField("boolean", "ENABLE_DYNAMIC_DELIVERY", "false")
+        }
     }
- }
+}
+
+dependencies {
+    implementation("com.google.android.play:core:1.10.3")
+}
 
 flutter {
     source = "../.."
