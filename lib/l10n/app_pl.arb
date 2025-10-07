@@ -41,5 +41,13 @@
   "settings": "Settings",
   "profile": "Profile",
   "about": "About",
-  "version": "Version"
+  "version": "Version",
+  "create": "Create",
+  "join": "Join",
+  "language": "Language",
+  "invalidUrl": "Invalid URL",
+  "serverUnreachable": "Server unreachable",
+  "selectServer": "Select Server",
+  "serverUrl": "Server URL",
+  "connect": "Connect"
 }
