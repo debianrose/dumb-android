@@ -367,6 +367,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language'**
   String get language;
+
+  /// No description provided for @selectServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Server'**
+  String get selectServer;
+
+  /// No description provided for @serverUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Server URL'**
+  String get serverUrl;
+
+  /// No description provided for @connect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get connect;
+
+  /// No description provided for @invalidUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid URL'**
+  String get invalidUrl;
+
+  /// No description provided for @serverUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Server unreachable'**
+  String get serverUnreachable;
+
+  /// No description provided for @twoFactorAuthentication.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-Factor Authentication'**
+  String get twoFactorAuthentication;
+
+  /// No description provided for @enable2FA.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable 2FA'**
+  String get enable2FA;
+
+  /// No description provided for @disable2FA.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable 2FA'**
+  String get disable2FA;
+
+  /// No description provided for @enter2FACode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 2FA Code'**
+  String get enter2FACode;
+
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get theme;
+
+  /// No description provided for @system.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get system;
+
+  /// No description provided for @light.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get light;
+
+  /// No description provided for @dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get dark;
+
+  /// No description provided for @voiceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Message'**
+  String get voiceMessage;
+
+  /// No description provided for @video.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get video;
+
+  /// No description provided for @file.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get file;
+
+  /// No description provided for @sendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send message'**
+  String get sendError;
+
+  /// No description provided for @fileUploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'File upload failed'**
+  String get fileUploadError;
+
+  /// No description provided for @recordingPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission denied'**
+  String get recordingPermissionDenied;
+
+  /// No description provided for @recordingStartError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start recording'**
+  String get recordingStartError;
+
+  /// No description provided for @emptyRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording is empty or too short'**
+  String get emptyRecording;
+
+  /// No description provided for @uploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload error'**
+  String get uploadError;
+
+  /// No description provided for @playbackError.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback error'**
+  String get playbackError;
+
+  /// No description provided for @videoPlaybackNotImplemented.
+  ///
+  /// In en, this message translates to:
+  /// **'Video playback will be implemented later'**
+  String get videoPlaybackNotImplemented;
+
+  /// No description provided for @fileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'File saved'**
+  String get fileSaved;
+
+  /// No description provided for @downloadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Download error'**
+  String get downloadError;
+
+  /// No description provided for @unknownError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error'**
+  String get unknownError;
 }
 
 class _AppLocalizationsDelegate

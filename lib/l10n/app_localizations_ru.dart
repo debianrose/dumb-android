@@ -142,4 +142,86 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get language => 'Язык';
+
+  @override
+  String get selectServer => 'Select Server';
+
+  @override
+  String get serverUrl => 'Server URL';
+
+  @override
+  String get connect => 'Connect';
+
+  @override
+  String get invalidUrl => 'Invalid URL';
+
+  @override
+  String get serverUnreachable => 'Server unreachable';
+
+  @override
+  String get twoFactorAuthentication => 'Two-Factor Authentication';
+
+  @override
+  String get enable2FA => 'Enable 2FA';
+
+  @override
+  String get disable2FA => 'Disable 2FA';
+
+  @override
+  String get enter2FACode => 'Enter 2FA Code';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get system => 'System';
+
+  @override
+  String get light => 'Light';
+
+  @override
+  String get dark => 'Dark';
+
+  @override
+  String get voiceMessage => 'Voice Message';
+
+  @override
+  String get video => 'Video';
+
+  @override
+  String get file => 'File';
+
+  @override
+  String get sendError => 'Failed to send message';
+
+  @override
+  String get fileUploadError => 'File upload failed';
+
+  @override
+  String get recordingPermissionDenied => 'Microphone permission denied';
+
+  @override
+  String get recordingStartError => 'Failed to start recording';
+
+  @override
+  String get emptyRecording => 'Recording is empty or too short';
+
+  @override
+  String get uploadError => 'Upload error';
+
+  @override
+  String get playbackError => 'Playback error';
+
+  @override
+  String get videoPlaybackNotImplemented =>
+      'Video playback will be implemented later';
+
+  @override
+  String get fileSaved => 'File saved';
+
+  @override
+  String get downloadError => 'Download error';
+
+  @override
+  String get unknownError => 'Unknown error';
 }
