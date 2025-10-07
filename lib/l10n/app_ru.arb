@@ -41,5 +41,13 @@
   "settings": "Настройки",
   "profile": "Профиль",
   "about": "О проекте",
-  "version": "Версия"
+  "version": "Версия",
+  "create": "Create",
+  "join": "Join",
+  "language": "Language",
+  "invalidUrl": "Invalid URL",
+  "serverUnreachable": "Server unreachable",
+  "selectServer": "Select Server",
+  "serverUrl": "Server URL",
+  "connect": "Connect"
 }
