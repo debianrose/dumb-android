@@ -14,3 +14,5 @@ build
 .cxx
 local.properties
 build
+app/android/build
+.dart_tools
