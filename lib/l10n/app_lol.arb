@@ -41,5 +41,13 @@
   "settings": "SETTINGS",
   "profile": "PROFILE",
   "about": "BOUT",
-  "version": "VERSHUN"
+  "version": "VERSHUN",
+  "create": "Create",
+  "join": "Join",
+  "language": "Language",
+  "invalidUrl": "Invalid URL",
+  "serverUnreachable": "Server unreachable",
+  "selectServer": "Select Server",
+  "serverUrl": "Server URL",
+  "connect": "Connect"
 }
