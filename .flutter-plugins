@@ -1,9 +1,0 @@
-# This is a generated file; do not edit or check into version control.
-path_provider_linux=/data/data/com.termux/files/home/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
-path_provider_windows=/data/data/com.termux/files/home/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
-shared_preferences=/data/data/com.termux/files/home/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
-shared_preferences_android=/data/data/com.termux/files/home/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.13/
-shared_preferences_foundation=/data/data/com.termux/files/home/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.4/
-shared_preferences_linux=/data/data/com.termux/files/home/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
-shared_preferences_web=/data/data/com.termux/files/home/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
-shared_preferences_windows=/data/data/com.termux/files/home/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
