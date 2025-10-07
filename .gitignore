@@ -31,20 +31,11 @@
 
 # OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Coverage
-.coverage/
-coverage/
-
-# Misc
-*.log
-*.key
-*.p12
-*.pem
-*.jks
+build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+build
+app/android/build
+.dart_tools
