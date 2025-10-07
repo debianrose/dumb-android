@@ -2,4 +2,4 @@ files:
   - source: /lib/l10n/arb/app_en.arb
     translation: /lib/l10n/arb/app_%two_letters_code%.arb
 bundles:
-  - 3
+  - 5
