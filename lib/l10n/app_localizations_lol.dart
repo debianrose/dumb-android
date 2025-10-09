@@ -4,135 +4,135 @@ import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
 
-/// The translations for English (`en`).
-class AppLocalizationsEn extends AppLocalizations {
-  AppLocalizationsEn([String locale = 'en']) : super(locale);
+/// The translations for Mongo (`lol`).
+class AppLocalizationsLol extends AppLocalizations {
+  AppLocalizationsLol([String locale = 'lol']) : super(locale);
 
   @override
   String get appTitle => 'DUMB Android';
 
   @override
-  String get login => 'Login';
+  String get login => 'LOGIN';
 
   @override
-  String get register => 'Register';
+  String get register => 'REGISTR';
 
   @override
-  String get username => 'Username';
+  String get username => 'USERNAME';
 
   @override
-  String get password => 'Password';
+  String get password => 'PASWORD';
 
   @override
-  String get channels => 'Channels';
+  String get channels => 'CHANNELS';
 
   @override
-  String get createChannel => 'Create Channel';
+  String get createChannel => 'CREATE CHANNEL';
 
   @override
-  String get joinChannel => 'Join Channel';
+  String get joinChannel => 'JOIN CHANNEL';
 
   @override
-  String get channelName => 'Channel Name';
+  String get channelName => 'CHANNEL NAYM';
 
   @override
-  String get sendMessage => 'Send Message';
+  String get sendMessage => 'SEND MESAGE';
 
   @override
-  String get typeMessage => 'Type a message...';
+  String get typeMessage => 'TYPE MESAGE...';
 
   @override
-  String get noMessages => 'No messages';
+  String get noMessages => 'NO MESAGEZ';
 
   @override
-  String get beFirstToMessage => 'Be the first to message in this channel!';
+  String get beFirstToMessage => 'BE TEH FURST 2 MESAGE IN DIS CHANNEL!';
 
   @override
-  String get members => 'members';
+  String get members => 'MEMBERS';
 
   @override
-  String get createdBy => 'Created by';
+  String get createdBy => 'CREATD BY';
 
   @override
-  String get leaveChannel => 'Leave Channel';
+  String get leaveChannel => 'LEEF CHANNEL';
 
   @override
-  String get refresh => 'Refresh';
+  String get refresh => 'REFRESH';
 
   @override
-  String get serverSettings => 'Server Settings';
+  String get serverSettings => 'SERVR SETTINGS';
 
   @override
-  String get logout => 'Logout';
+  String get logout => 'LOGOUT';
 
   @override
-  String get noChannelsAvailable => 'No channels available';
+  String get noChannelsAvailable => 'NO CHANNELS AVAILABLE';
 
   @override
-  String get connectionError => 'Connection Error';
+  String get connectionError => 'CONNECSHUN ERROR';
 
   @override
-  String get retry => 'Retry';
+  String get retry => 'RETRY';
 
   @override
-  String get serverIp => 'Server IP Address';
+  String get serverIp => 'SERVR IP ADDRES';
 
   @override
-  String get serverPort => 'Server Port';
+  String get serverPort => 'SERVR PORT';
 
   @override
-  String get saveSettings => 'Save Settings';
+  String get saveSettings => 'SAVE SETTINGS';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'TEST CONNECSHUN';
 
   @override
-  String get currentSettings => 'Current Settings';
+  String get currentSettings => 'CURRENT SETTINGS';
 
   @override
-  String get quickSettings => 'Quick Settings';
+  String get quickSettings => 'QUICK SETTINGS';
 
   @override
-  String get hints => 'Hints';
+  String get hints => 'HINTS';
 
   @override
-  String get androidEmulator => 'Android Emulator';
+  String get androidEmulator => 'ANDROID EMULATOR';
 
   @override
   String get localhost => 'Localhost';
 
   @override
-  String get localNetwork => 'Local Network';
+  String get localNetwork => 'LOCAL NETWORK';
 
   @override
-  String get loading => 'Loading...';
+  String get loading => 'LOADIN...';
 
   @override
-  String get error => 'Error';
+  String get error => 'ERROR';
 
   @override
-  String get success => 'Success';
+  String get success => 'SUCCES';
 
   @override
-  String get cancel => 'Cancel';
+  String get cancel => 'CANCEL';
 
   @override
-  String get confirm => 'Confirm';
+  String get confirm => 'CONFIRM';
 
   @override
-  String get search => 'Search';
+  String get search => 'SEARCH';
 
   @override
-  String get settings => 'Settings';
+  String get settings => 'SETTINGS';
 
   @override
-  String get profile => 'Profile';
+  String get profile => 'PROFILE';
 
   @override
-  String get about => 'About';
+  String get about => 'BOUT';
 
   @override
-  String get version => 'Version';
+  String get version => 'VERSHUN';
 
   @override
   String get create => 'Create';

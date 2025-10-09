@@ -154,107 +154,11 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
-  /// No description provided for @invalidInput.
+  /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Invalid input'**
-  String get invalidInput;
-
-  /// No description provided for @serverSaved.
-  ///
-  /// In en, this message translates to:
-  /// **'Server saved'**
-  String get serverSaved;
-
-  /// No description provided for @invalidUrl.
-  ///
-  /// In en, this message translates to:
-  /// **'Invalid URL'**
-  String get invalidUrl;
-
-  /// No description provided for @serverUnreachable.
-  ///
-  /// In en, this message translates to:
-  /// **'Server unreachable'**
-  String get serverUnreachable;
-
-  /// No description provided for @connectionError.
-  ///
-  /// In en, this message translates to:
-  /// **'Connection error'**
-  String get connectionError;
-
-  /// No description provided for @settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings'**
-  String get settings;
-
-  /// No description provided for @language.
-  ///
-  /// In en, this message translates to:
-  /// **'Language'**
-  String get language;
-
-  /// No description provided for @theme.
-  ///
-  /// In en, this message translates to:
-  /// **'Theme'**
-  String get theme;
-
-  /// No description provided for @system.
-  ///
-  /// In en, this message translates to:
-  /// **'System'**
-  String get system;
-
-  /// No description provided for @light.
-  ///
-  /// In en, this message translates to:
-  /// **'Light'**
-  String get light;
-
-  /// No description provided for @dark.
-  ///
-  /// In en, this message translates to:
-  /// **'Dark'**
-  String get dark;
-
-  /// No description provided for @close.
-  ///
-  /// In en, this message translates to:
-  /// **'Close'**
-  String get close;
-
-  /// No description provided for @selectServer.
-  ///
-  /// In en, this message translates to:
-  /// **'Select Server'**
-  String get selectServer;
-
-  /// No description provided for @serverName.
-  ///
-  /// In en, this message translates to:
-  /// **'Server Name'**
-  String get serverName;
-
-  /// No description provided for @serverUrl.
-  ///
-  /// In en, this message translates to:
-  /// **'Server URL'**
-  String get serverUrl;
-
-  /// No description provided for @saveServer.
-  ///
-  /// In en, this message translates to:
-  /// **'Save Server'**
-  String get saveServer;
-
-  /// No description provided for @loading.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading...'**
-  String get loading;
+  /// **'DUMB Android'**
+  String get appTitle;
 
   /// No description provided for @login.
   ///
@@ -280,23 +184,11 @@ abstract class AppLocalizations {
   /// **'Password'**
   String get password;
 
-  /// No description provided for @error.
-  ///
-  /// In en, this message translates to:
-  /// **'Error'**
-  String get error;
-
   /// No description provided for @channels.
   ///
   /// In en, this message translates to:
   /// **'Channels'**
   String get channels;
-
-  /// No description provided for @search.
-  ///
-  /// In en, this message translates to:
-  /// **'Search'**
-  String get search;
 
   /// No description provided for @createChannel.
   ///
@@ -304,17 +196,215 @@ abstract class AppLocalizations {
   /// **'Create Channel'**
   String get createChannel;
 
+  /// No description provided for @joinChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Join Channel'**
+  String get joinChannel;
+
   /// No description provided for @channelName.
   ///
   /// In en, this message translates to:
   /// **'Channel Name'**
   String get channelName;
 
+  /// No description provided for @sendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Message'**
+  String get sendMessage;
+
+  /// No description provided for @typeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message...'**
+  String get typeMessage;
+
+  /// No description provided for @noMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages'**
+  String get noMessages;
+
+  /// No description provided for @beFirstToMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to message in this channel!'**
+  String get beFirstToMessage;
+
+  /// No description provided for @members.
+  ///
+  /// In en, this message translates to:
+  /// **'members'**
+  String get members;
+
+  /// No description provided for @createdBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Created by'**
+  String get createdBy;
+
+  /// No description provided for @leaveChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Channel'**
+  String get leaveChannel;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @serverSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Server Settings'**
+  String get serverSettings;
+
+  /// No description provided for @logout.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout;
+
+  /// No description provided for @noChannelsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No channels available'**
+  String get noChannelsAvailable;
+
+  /// No description provided for @connectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Error'**
+  String get connectionError;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @serverIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Server IP Address'**
+  String get serverIp;
+
+  /// No description provided for @serverPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Server Port'**
+  String get serverPort;
+
+  /// No description provided for @saveSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Settings'**
+  String get saveSettings;
+
+  /// No description provided for @testConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Connection'**
+  String get testConnection;
+
+  /// No description provided for @currentSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Settings'**
+  String get currentSettings;
+
+  /// No description provided for @quickSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Settings'**
+  String get quickSettings;
+
+  /// No description provided for @hints.
+  ///
+  /// In en, this message translates to:
+  /// **'Hints'**
+  String get hints;
+
+  /// No description provided for @androidEmulator.
+  ///
+  /// In en, this message translates to:
+  /// **'Android Emulator'**
+  String get androidEmulator;
+
+  /// No description provided for @localhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Localhost'**
+  String get localhost;
+
+  /// No description provided for @localNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Network'**
+  String get localNetwork;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get error;
+
+  /// No description provided for @success.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get success;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
   /// **'Cancel'**
   String get cancel;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get search;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get version;
 
   /// No description provided for @create.
   ///
@@ -328,11 +418,95 @@ abstract class AppLocalizations {
   /// **'Join'**
   String get join;
 
-  /// No description provided for @message.
+  /// No description provided for @language.
   ///
   /// In en, this message translates to:
-  /// **'Message'**
-  String get message;
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @invalidUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid URL'**
+  String get invalidUrl;
+
+  /// No description provided for @serverUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Server unreachable'**
+  String get serverUnreachable;
+
+  /// No description provided for @selectServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Server'**
+  String get selectServer;
+
+  /// No description provided for @serverUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Server URL'**
+  String get serverUrl;
+
+  /// No description provided for @connect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get connect;
+
+  /// No description provided for @invalidInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid input'**
+  String get invalidInput;
+
+  /// No description provided for @serverSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Server saved'**
+  String get serverSaved;
+
+  /// No description provided for @serverName.
+  ///
+  /// In en, this message translates to:
+  /// **'Server Name'**
+  String get serverName;
+
+  /// No description provided for @saveServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Server'**
+  String get saveServer;
+
+  /// No description provided for @system.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get system;
+
+  /// No description provided for @light.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get light;
+
+  /// No description provided for @dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get dark;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get theme;
 
   /// No description provided for @sendFile.
   ///
@@ -357,6 +531,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stop Recording'**
   String get stopRecording;
+
+  /// No description provided for @message.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get message;
 }
 
 class _AppLocalizationsDelegate

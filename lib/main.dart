@@ -11,7 +11,7 @@ import 'package:mime/mime.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:record/record.dart';
-import 'l10n/app_localizations.dart';
+import 'package:dumb_android/l10n/app_localizations.dart';
 
 String apiUrl = 'http://localhost:3000/api';
 String? _cachedToken;
@@ -89,12 +89,7 @@ class _DumbAppState extends State<DumbApp> {
         brightness: Brightness.dark,
       ),
       themeMode: _themeMode,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       locale: _locale,
       home: ServerSelectionScreen(
@@ -159,7 +154,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
     
     if (name.isEmpty || url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)?.invalidInput ?? 'Invalid input')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.invalidInput)),
       );
       return;
     }
@@ -175,7 +170,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
     await _loadSavedServers();
     
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)?.serverSaved ?? 'Server saved')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.serverSaved)),
     );
   }
 
@@ -192,7 +187,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
 
     if (url.isEmpty || uri == null || !uri.hasAbsolutePath) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)?.invalidUrl ?? 'Invalid URL')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.invalidUrl)),
       );
       return;
     }
@@ -215,12 +210,12 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)?.serverUnreachable ?? 'Server unreachable')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.serverUnreachable)),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${AppLocalizations.of(context)?.connectionError ?? 'Connection error'}: $e')),
+        SnackBar(content: Text('${AppLocalizations.of(context)!.connectionError}: $e')),
       );
     } finally {
       setState(() => _loading = false);
@@ -231,13 +226,13 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)?.settings ?? 'Settings'),
+        title: Text(AppLocalizations.of(context)!.settings),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title: Text(AppLocalizations.of(context)?.language ?? 'Language'),
+                title: Text(AppLocalizations.of(context)!.language),
                 trailing: DropdownButton<Locale>(
                   value: Localizations.localeOf(context),
                   onChanged: (Locale? newLocale) {
@@ -255,7 +250,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
                 ),
               ),
               ListTile(
-                title: Text(AppLocalizations.of(context)?.theme ?? 'Theme'),
+                title: Text(AppLocalizations.of(context)!.theme),
                 trailing: DropdownButton<ThemeMode>(
                   value: widget.themeMode,
                   onChanged: (ThemeMode? newTheme) {
@@ -267,15 +262,15 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
                   items: [
                     DropdownMenuItem(
                       value: ThemeMode.system,
-                      child: Text(AppLocalizations.of(context)?.system ?? 'System'),
+                      child: Text(AppLocalizations.of(context)!.system),
                     ),
                     DropdownMenuItem(
                       value: ThemeMode.light,
-                      child: Text(AppLocalizations.of(context)?.light ?? 'Light'),
+                      child: Text(AppLocalizations.of(context)!.light),
                     ),
                     DropdownMenuItem(
                       value: ThemeMode.dark,
-                      child: Text(AppLocalizations.of(context)?.dark ?? 'Dark'),
+                      child: Text(AppLocalizations.of(context)!.dark),
                     ),
                   ],
                 ),
@@ -286,7 +281,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)?.close ?? 'Close'),
+            child: Text(AppLocalizations.of(context)!.close),
           ),
         ],
       ),
@@ -344,7 +339,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
           ),
           Expanded(
             child: _loading
-                ? Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
                     itemCount: savedServers.length,
                     itemBuilder: (context, index) {
@@ -353,7 +348,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
                         title: Text(server['name'] ?? ''),
                         subtitle: Text(server['url'] ?? ''),
                         trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
+                          icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _deleteServer(index),
                         ),
                         onTap: () => _connectToServer(server['url']!),
@@ -430,7 +425,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     return loading
-        ? Scaffold(body: Center(child: Text(AppLocalizations.of(context)?.loading ?? 'Loading...')))
+        ? Scaffold(body: Center(child: Text(AppLocalizations.of(context)!.loading)))
         : AuthScreen(onLogin: (t) async {
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString('token', t);
@@ -486,12 +481,12 @@ class _AuthScreenState extends State<AuthScreen> {
         setState(() {
           requires2FA = true;
           sessionId = json['sessionId'] ?? '';
-          error = json['message'] ?? AppLocalizations.of(context)?.error ?? 'Error';
+          error = json['message'] ?? AppLocalizations.of(context)!.error;
           loading = false;
         });
       } else {
         setState(() {
-          error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Error';
+          error = json['error'] ?? AppLocalizations.of(context)!.error;
           loading = false;
         });
       }
@@ -503,7 +498,7 @@ class _AuthScreenState extends State<AuthScreen> {
       setState(() => requires2FA = true);
     } else {
       setState(() {
-        error = AppLocalizations.of(context)?.error ?? 'Unknown error';
+        error = AppLocalizations.of(context)!.error;
         loading = false;
       });
     }
@@ -528,7 +523,7 @@ class _AuthScreenState extends State<AuthScreen> {
       widget.onLogin(json['token']);
     } else {
       setState(() {
-        error = json['error'] ?? AppLocalizations.of(context)?.error ?? '2FA error';
+        error = json['error'] ?? AppLocalizations.of(context)!.error;
         loading = false;
       });
     }
@@ -562,7 +557,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   if (requires2FA)
                     TextField(
-                      decoration: InputDecoration(labelText: '2FA Code'),
+                      decoration: const InputDecoration(labelText: '2FA Code'),
                       onChanged: (v) => twoFactorToken = v,
                       enabled: !loading,
                     ),
@@ -652,7 +647,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
         },
         onDone: () {
           print('WebSocket closed');
-          Future.delayed(Duration(seconds: 5), _connectWebSocket);
+          Future.delayed(const Duration(seconds: 5), _connectWebSocket);
         },
       );
     } catch (e) {
@@ -680,7 +675,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
       });
     } else {
       setState(() {
-        error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Error';
+        error = json['error'] ?? AppLocalizations.of(context)!.error;
         loading = false;
       });
     }
@@ -708,6 +703,30 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     );
   }
 
+  void _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    _cachedToken = null;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ServerSelectionScreen(
+          setLocale: widget.setLocale,
+          setTheme: widget.setTheme,
+          setServerUrl: widget.setServerUrl,
+          themeMode: widget.themeMode,
+        ),
+      ),
+    );
+  }
+
+  void _showProfileSettings() {
+    showDialog(
+      context: context,
+      builder: (context) => ProfileSettingsDialog(token: widget.token),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -724,6 +743,16 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
             icon: const Icon(Icons.add),
             onPressed: _createChannel,
             tooltip: loc.createChannel,
+          ),
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: _showProfileSettings,
+            tooltip: 'Profile Settings',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+            tooltip: 'Logout',
           ),
         ],
       ),
@@ -750,6 +779,95 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                 ),
               ),
             ]),
+    );
+  }
+}
+
+class ProfileSettingsDialog extends StatefulWidget {
+  final String token;
+  const ProfileSettingsDialog({required this.token});
+
+  @override
+  State<ProfileSettingsDialog> createState() => _ProfileSettingsDialogState();
+}
+
+class _ProfileSettingsDialogState extends State<ProfileSettingsDialog> {
+  bool loading = false;
+  String error = '';
+
+  Future<void> _uploadAvatar() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    setState(() {
+      loading = true;
+      error = '';
+    });
+
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$apiUrl/upload/avatar'),
+      );
+      request.headers['Authorization'] = 'Bearer ${widget.token}';
+      request.files.add(await http.MultipartFile.fromPath(
+        'avatar',
+        result.files.single.path!,
+      ));
+
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+      var json = jsonDecode(responseData);
+
+      if (json['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Avatar updated successfully')),
+        );
+        Navigator.pop(context);
+      } else {
+        setState(() {
+          error = json['error'] ?? 'Failed to upload avatar';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Error uploading avatar: $e';
+      });
+    } finally {
+      setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Profile Settings'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (error.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text(error, style: const TextStyle(color: Colors.red)),
+            ),
+          ElevatedButton(
+            onPressed: loading ? null : _uploadAvatar,
+            child: loading 
+                ? const CircularProgressIndicator()
+                : const Text('Change Avatar'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }
@@ -865,7 +983,7 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
         },
         onDone: () {
           print('WebSocket closed');
-          Future.delayed(Duration(seconds: 5), _connectWebSocket);
+          Future.delayed(const Duration(seconds: 5), _connectWebSocket);
         },
       );
     } catch (e) {
@@ -898,7 +1016,7 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
       });
     } else {
       setState(() {
-        error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Error';
+        error = json['error'] ?? AppLocalizations.of(context)!.error;
         loading = false;
       });
     }
@@ -1055,7 +1173,7 @@ class _ChatScreenState extends State<ChatScreen> {
         },
         onDone: () {
           print('WebSocket closed');
-          Future.delayed(Duration(seconds: 5), _connectWebSocket);
+          Future.delayed(const Duration(seconds: 5), _connectWebSocket);
         },
       );
     } catch (e) {
@@ -1091,7 +1209,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _scrollToBottom();
     } else {
       setState(() {
-        error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Error';
+        error = json['error'] ?? AppLocalizations.of(context)!.error;
         loading = false;
       });
     }
@@ -1115,7 +1233,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (json['success'] == true) {
       setState(() => text = '');
     } else {
-      setState(() => error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'Send error');
+      setState(() => error = json['error'] ?? AppLocalizations.of(context)!.error);
     }
     setState(() => sending = false);
   }
@@ -1142,7 +1260,7 @@ class _ChatScreenState extends State<ChatScreen> {
         body: jsonEncode({'channel': widget.channel, 'fileId': fileId}),
       );
     } else {
-      setState(() => error = json['error'] ?? AppLocalizations.of(context)?.error ?? 'File upload error');
+      setState(() => error = json['error'] ?? AppLocalizations.of(context)!.error);
     }
   }
 
@@ -1164,11 +1282,11 @@ class _ChatScreenState extends State<ChatScreen> {
           error = '';
         });
       } else {
-        setState(() => error = 'Нет разрешения на запись аудио');
+        setState(() => error = 'No audio recording permission');
       }
     } catch (e) {
       print('Recording start error: $e');
-      setState(() => error = 'Ошибка начала записи: $e');
+      setState(() => error = 'Recording start error: $e');
     }
   }
 
@@ -1178,17 +1296,17 @@ class _ChatScreenState extends State<ChatScreen> {
       final path = await _record.stop();
       setState(() => _isRecording = false);
       if (path == null) {
-        setState(() => error = 'Не удалось сохранить запись');
+        setState(() => error = 'Failed to save recording');
         return;
       }
       final file = File(path);
       if (!file.existsSync()) {
-        setState(() => error = 'Файл записи не найден');
+        setState(() => error = 'Recording file not found');
         return;
       }
       final fileSize = await file.length();
       if (fileSize == 0) {
-        setState(() => error = 'Запись пустая');
+        setState(() => error = 'Recording is empty');
         return;
       }
       final cacheDir = await getApplicationDocumentsDirectory();
@@ -1212,7 +1330,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       print('Recording stop/send error: $e');
-      setState(() => error = 'Ошибка отправки записи: $e');
+      setState(() => error = 'Recording send error: $e');
     }
   }
 
@@ -1276,9 +1394,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       title: Text(username),
                       subtitle: isVoice
                           ? Row(children: [
-                              Icon(Icons.play_arrow, color: Colors.blue),
-                              SizedBox(width: 8),
-                              Text('Voice message'),
+                              const Icon(Icons.play_arrow, color: Colors.blue),
+                              const SizedBox(width: 8),
+                              const Text('Voice message'),
                             ])
                           : Text(msg['text'] ?? ''),
                       onTap: isVoice ? () => _playVoiceMessage(fileId) : null,
@@ -1286,26 +1404,33 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
                 ),
         ),
-        Padding(
+        Container(
           padding: const EdgeInsets.all(8.0),
           child: Row(children: [
             Expanded(
               child: TextField(
-                decoration: InputDecoration(labelText: loc.message),
+                decoration: InputDecoration(
+                  labelText: loc.message,
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
                 onChanged: (v) => text = v,
                 onSubmitted: (_) => _sendMessage(),
               ),
             ),
+            const SizedBox(width: 8),
             IconButton(
               icon: Icon(_isRecording ? Icons.stop : Icons.mic),
               onPressed: _isRecording ? _stopRecordingAndSend : _startRecording,
               tooltip: _isRecording ? loc.stopRecording : loc.startRecording,
             ),
+            const SizedBox(width: 4),
             IconButton(
               icon: const Icon(Icons.attach_file),
               onPressed: _sendFile,
               tooltip: loc.sendFile,
             ),
+            const SizedBox(width: 4),
             IconButton(
               icon: sending ? const CircularProgressIndicator() : const Icon(Icons.send),
               onPressed: sending ? null : _sendMessage,
