@@ -1,6 +1,6 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -482,29 +482,25 @@ class _AuthScreenState extends State<AuthScreen> {
       }),
     );
     final json = jsonDecode(resp.body);
-    if (resp.statusCode != 200 || json['success'] != true) {
-      if (json['requires2FA'] == true) {
+    
+    if (resp.statusCode == 200 && json['success'] == true) {
+      if (json['token'] != null) {
+        widget.onLogin(json['token']);
+      } else if (json['requires2FA'] == true) {
         setState(() {
           requires2FA = true;
           sessionId = json['sessionId'] ?? '';
-          error = json['message'] ?? AppLocalizations.of(context)!.error;
-          loading = false;
-        });
-      } else {
-        setState(() {
-          error = json['error'] ?? AppLocalizations.of(context)!.error;
           loading = false;
         });
       }
-      return;
-    }
-    if (json['token'] != null) {
-      widget.onLogin(json['token']);
-    } else if (json['requires2FA'] == true) {
-      setState(() => requires2FA = true);
     } else {
+      // Исправление для регистрации - проверяем разные форматы ошибок
+      String errorMessage = json['error'] ?? json['message'] ?? AppLocalizations.of(context)!.error;
+      if (errorMessage.contains('user exists') || errorMessage.contains('already exists')) {
+        errorMessage = 'User already exists';
+      }
       setState(() {
-        error = AppLocalizations.of(context)!.error;
+        error = errorMessage;
         loading = false;
       });
     }
@@ -538,6 +534,60 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    
+    if (requires2FA) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('2FA Verification')),
+        body: Center(
+          child: SizedBox(
+            width: 350,
+            child: Card(
+              margin: const EdgeInsets.all(16),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Enter 2FA Code',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: '2FA Code',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (v) => twoFactorToken = v,
+                      enabled: !loading,
+                    ),
+                    if (error.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Text(error, style: const TextStyle(color: Colors.red)),
+                      ),
+                    const SizedBox(height: 20),
+                    loading
+                        ? const CircularProgressIndicator()
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: _verify2FA,
+                                  child: const Text('Verify'),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
     return Scaffold(
       appBar: AppBar(title: Text(isLogin ? loc.login : loc.register)),
       body: Center(
@@ -555,18 +605,13 @@ class _AuthScreenState extends State<AuthScreen> {
                     onChanged: (v) => username = v,
                     enabled: !loading,
                   ),
+                  const SizedBox(height: 16),
                   TextField(
                     decoration: InputDecoration(labelText: loc.password),
                     obscureText: true,
                     onChanged: (v) => password = v,
                     enabled: !loading,
                   ),
-                  if (requires2FA)
-                    TextField(
-                      decoration: const InputDecoration(labelText: '2FA Code'),
-                      onChanged: (v) => twoFactorToken = v,
-                      enabled: !loading,
-                    ),
                   if (error.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
@@ -579,8 +624,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             ElevatedButton(
-                              onPressed: requires2FA ? _verify2FA : _auth,
-                              child: Text(requires2FA ? '2FA' : isLogin ? loc.login : loc.register),
+                              onPressed: _auth,
+                              child: Text(isLogin ? loc.login : loc.register),
                             ),
                             TextButton(
                               onPressed: loading
@@ -713,7 +758,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     _cachedToken = null;
-    _avatarCache.clear(); // Очищаем кэш аватарок при выходе
+    _avatarCache.clear();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -983,7 +1028,6 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
         (message) {
           final data = jsonDecode(message);
           if (data['type'] == 'message' && data['action'] == 'new') {
-            // Реал-тайм обновление поиска при новых сообщениях
             if (search.isNotEmpty) {
               _searchChannels();
             }
@@ -1020,10 +1064,8 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
 
     setState(() => loading = true);
     
-    // Отменяем предыдущий таймер
     _searchTimer?.cancel();
     
-    // Запускаем новый таймер для задержки поиска (дебаунс)
     _searchTimer = Timer(const Duration(milliseconds: 500), () async {
       final resp = await http.post(
         Uri.parse('$apiUrl/channels/search'),
@@ -1156,6 +1198,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   Timer? _recordingTimer;
   int _recordingDuration = 0;
+  Timer? _messageUpdateTimer;
+  Map<String, dynamic>? _replyingTo;
+  final Map<String, bool> _playingVoiceMessages = {};
 
   @override
   void initState() {
@@ -1163,6 +1208,15 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadMessages();
     _connectWebSocket();
     _preloadChannelAvatars();
+    _startMessageUpdates();
+  }
+
+  void _startMessageUpdates() {
+    _messageUpdateTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (_wsChannel == null || _wsChannel!.closeCode != null) {
+        _connectWebSocket();
+      }
+    });
   }
 
   void _preloadChannelAvatars() async {
@@ -1220,7 +1274,6 @@ class _ChatScreenState extends State<ChatScreen> {
         },
         onDone: () {
           print('WebSocket closed');
-          Future.delayed(const Duration(seconds: 5), _connectWebSocket);
         },
       );
     } catch (e) {
@@ -1234,6 +1287,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _audioPlayer.dispose();
     _wsChannel?.sink.close();
     _recordingTimer?.cancel();
+    _messageUpdateTimer?.cancel();
     super.dispose();
   }
 
@@ -1273,14 +1327,24 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     if (text.isEmpty) return;
     setState(() => sending = true);
+    
+    final messageData = {
+      'channel': widget.channel, 
+      'text': text,
+      if (_replyingTo != null) 'replyTo': _replyingTo!['id'],
+    };
+    
     final resp = await http.post(
       Uri.parse('$apiUrl/message'),
       headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'},
-      body: jsonEncode({'channel': widget.channel, 'text': text}),
+      body: jsonEncode(messageData),
     );
     final json = jsonDecode(resp.body);
     if (json['success'] == true) {
-      setState(() => text = '');
+      setState(() {
+        text = '';
+        _replyingTo = null; // Очищаем ответ после отправки
+      });
     } else {
       setState(() => error = json['error'] ?? AppLocalizations.of(context)!.error);
     }
@@ -1309,8 +1373,15 @@ class _ChatScreenState extends State<ChatScreen> {
       await http.post(
         Uri.parse('$apiUrl/message'),
         headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'},
-        body: jsonEncode({'channel': widget.channel, 'fileId': fileId}),
+        body: jsonEncode({
+          'channel': widget.channel, 
+          'fileId': fileId,
+          if (_replyingTo != null) 'replyTo': _replyingTo!['id'],
+        }),
       );
+      setState(() {
+        _replyingTo = null; // Очищаем ответ после отправки
+      });
     } else {
       setState(() => error = json['error'] ?? AppLocalizations.of(context)!.error);
     }
@@ -1335,7 +1406,6 @@ class _ChatScreenState extends State<ChatScreen> {
           error = '';
         });
         
-        // Запускаем таймер для отсчета времени записи
         _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
           setState(() {
             _recordingDuration = timer.tick;
@@ -1387,8 +1457,15 @@ class _ChatScreenState extends State<ChatScreen> {
         await http.post(
           Uri.parse('$apiUrl/message'),
           headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'},
-          body: jsonEncode({'channel': widget.channel, 'fileId': fileId}),
+          body: jsonEncode({
+            'channel': widget.channel, 
+            'fileId': fileId,
+            if (_replyingTo != null) 'replyTo': _replyingTo!['id'],
+          }),
         );
+        setState(() {
+          _replyingTo = null; // Очищаем ответ после отправки
+        });
       } else {
         setState(() => error = json['error'] ?? 'Voice upload error');
       }
@@ -1398,37 +1475,58 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> _playVoiceMessage(String filename) async {
+  Future<void> _playVoiceMessage(String filename, String messageId) async {
     try {
+      if (_playingVoiceMessages[messageId] == true) {
+        await _audioPlayer.pause();
+        setState(() {
+          _playingVoiceMessages[messageId] = false;
+        });
+        return;
+      }
+
       final appDocDir = await getApplicationDocumentsDirectory();
       final voiceCacheDir = Directory('${appDocDir.path}/voice_cache');
       if (!voiceCacheDir.existsSync()) voiceCacheDir.createSync(recursive: true);
       
       final cachedPath = '${voiceCacheDir.path}/$filename';
       
-      if (await File(cachedPath).exists()) {
-        await _audioPlayer.setFilePath(cachedPath);
-        await _audioPlayer.play();
-        return;
+      if (!await File(cachedPath).exists()) {
+        final response = await http.get(
+          Uri.parse('$apiUrl/download/$filename'),
+          headers: {'Authorization': 'Bearer ${widget.token}'},
+        );
+
+        if (response.statusCode == 200) {
+          await File(cachedPath).writeAsBytes(response.bodyBytes);
+          _voiceCache[cachedPath] = File(cachedPath);
+        } else {
+          setState(() => error = 'Failed to download voice message');
+          return;
+        }
       }
 
-      final response = await http.get(
-        Uri.parse('$apiUrl/download/$filename'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
+      setState(() {
+        _playingVoiceMessages[messageId] = true;
+      });
 
-      if (response.statusCode == 200) {
-        await File(cachedPath).writeAsBytes(response.bodyBytes);
-        _voiceCache[cachedPath] = File(cachedPath);
-        
-        await _audioPlayer.setFilePath(cachedPath);
-        await _audioPlayer.play();
-      } else {
-        setState(() => error = 'Failed to download voice message');
-      }
+      await _audioPlayer.setFilePath(cachedPath);
+      await _audioPlayer.play();
+
+      _audioPlayer.playerStateStream.listen((state) {
+        if (state.processingState == ProcessingState.completed) {
+          setState(() {
+            _playingVoiceMessages[messageId] = false;
+          });
+        }
+      });
+
     } catch (e) {
       print('Voice playback error: $e');
-      setState(() => error = 'Voice playback error: $e');
+      setState(() {
+        error = 'Voice playback error: $e';
+        _playingVoiceMessages[messageId] = false;
+      });
     }
   }
 
@@ -1458,6 +1556,51 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Widget _buildVoiceMessagePlayer(Map<String, dynamic> file, String messageId) {
+    final filename = file['filename'] ?? '';
+    final size = file['size'] ?? 0;
+    final isPlaying = _playingVoiceMessages[messageId] == true;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.blue, size: 28),
+                onPressed: () => _playVoiceMessage(filename, messageId),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Voice Message',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+              if (isPlaying)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${(size / 1024).toStringAsFixed(1)} KB',
+            style: const TextStyle(color: Colors.grey, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFileMessage(Map<String, dynamic> file) {
     final filename = file['filename'] ?? '';
     final originalName = file['originalName'] ?? '';
@@ -1469,36 +1612,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           mimeType.contains('audio/ogg');
 
     if (isVoiceMessage) {
-      return GestureDetector(
-        onTap: () => _playVoiceMessage(filename),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.play_arrow, color: Colors.blue, size: 28),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Voice Message',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${(size / 1024).toStringAsFixed(1)} KB',
-                style: const TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _buildVoiceMessagePlayer(file, file['id'] ?? filename);
     }
 
     return GestureDetector(
@@ -1536,6 +1650,50 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Widget _buildReplyPreview() {
+    if (_replyingTo == null) return const SizedBox.shrink();
+    
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.reply, size: 16, color: Colors.blue),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Replying to ${_replyingTo!['from']}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+                Text(
+                  _replyingTo!['text'] ?? 'Voice message',
+                  style: const TextStyle(fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            onPressed: () {
+              setState(() {
+                _replyingTo = null;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -1569,91 +1727,132 @@ class _ChatScreenState extends State<ChatScreen> {
                         final username = msg['from'] ?? '';
                         final avatarUrl = _avatarCache[username];
                         final file = msg['file'];
+                        final replyTo = msg['replyTo'];
                         
-                        return ListTile(
-                          leading: avatarUrl != null
-                              ? CircleAvatar(backgroundImage: NetworkImage(avatarUrl))
-                              : const CircleAvatar(child: Icon(Icons.person)),
-                          title: Text(username),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (msg['text'] != null && msg['text'].isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: Text(
-                                    msg['text'],
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
+                        return Column(
+                          children: [
+                            if (replyTo != null)
+                              Container(
+                                padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Replying to: ${replyTo['from']} - ${replyTo['text'] ?? 'Voice message'}',
+                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
-                              if (file != null) _buildFileMessage(file),
-                            ],
-                          ),
+                              ),
+                            ListTile(
+                              leading: avatarUrl != null
+                                  ? CircleAvatar(backgroundImage: NetworkImage(avatarUrl))
+                                  : const CircleAvatar(child: Icon(Icons.person)),
+                              title: Text(username),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (msg['text'] != null && msg['text'].isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Text(
+                                        msg['text'],
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                    ),
+                                  if (file != null) _buildFileMessage(file),
+                                ],
+                              ),
+                              onLongPress: () {
+                                setState(() {
+                                  _replyingTo = {
+                                    'id': msg['id'],
+                                    'from': username,
+                                    'text': msg['text'],
+                                  };
+                                });
+                              },
+                            ),
+                          ],
                         );
                       },
                     ),
         ),
-        Container(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(children: [
-            // Кнопка записи слева
-            GestureDetector(
-              onLongPressStart: (_) => _startRecording(),
-              onLongPressEnd: (_) => _stopRecordingAndSend(),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _isRecording ? Colors.red : Colors.blue,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: _isRecording
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.stop, color: Colors.white, size: 24),
-                          Text(
-                            '$_recordingDuration',
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+        // Панель ввода сообщения адаптированная для телефона
+        SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildReplyPreview(),
+                Row(
+                  children: [
+                    // Кнопка записи
+                    GestureDetector(
+                      onLongPressStart: (_) => _startRecording(),
+                      onLongPressEnd: (_) => _stopRecordingAndSend(),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _isRecording ? Colors.red : Colors.blue,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: _isRecording
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.stop, color: Colors.white, size: 20),
+                                  Text(
+                                    '$_recordingDuration',
+                                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                                  ),
+                                ],
+                              )
+                            : const Icon(Icons.mic, color: Colors.white, size: 20),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Поле ввода сообщения
+                    Expanded(
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minHeight: 40,
+                          maxHeight: 100,
+                        ),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: loc.typeMessage,
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           ),
-                        ],
-                      )
-                    : const Icon(Icons.mic, color: Colors.white, size: 24),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Увеличенное поле ввода сообщения
-            Expanded(
-              child: Container(
-                constraints: const BoxConstraints(
-                  minHeight: 50,
-                  maxHeight: 120,
+                          maxLines: null,
+                          expands: false,
+                          controller: TextEditingController(text: text),
+                          onChanged: (v) => text = v,
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.attach_file, size: 20),
+                      onPressed: _sendFile,
+                      tooltip: loc.sendFile,
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: sending ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                              : const Icon(Icons.send, size: 20),
+                      onPressed: sending ? null : _sendMessage,
+                      tooltip: loc.send,
+                    ),
+                  ],
                 ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: loc.typeMessage,
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  maxLines: null,
-                  expands: false,
-                  onChanged: (v) => text = v,
-                  onSubmitted: (_) => _sendMessage(),
-                ),
-              ),
+              ],
             ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.attach_file),
-              onPressed: _sendFile,
-              tooltip: loc.sendFile,
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              icon: sending ? const CircularProgressIndicator() : const Icon(Icons.send),
-              onPressed: sending ? null : _sendMessage,
-              tooltip: loc.send,
-            ),
-          ]),
+          ),
         ),
       ]),
     );
