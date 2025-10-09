@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -712,6 +713,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     _cachedToken = null;
+    _avatarCache.clear(); // Очищаем кэш аватарок при выходе
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -964,6 +966,7 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
   String search = '', error = '';
   bool loading = false;
   WebSocketChannel? _channel;
+  Timer? _searchTimer;
 
   @override
   void initState() {
@@ -980,6 +983,7 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
         (message) {
           final data = jsonDecode(message);
           if (data['type'] == 'message' && data['action'] == 'new') {
+            // Реал-тайм обновление поиска при новых сообщениях
             if (search.isNotEmpty) {
               _searchChannels();
             }
@@ -1001,32 +1005,47 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
   @override
   void dispose() {
     _channel?.sink.close();
+    _searchTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _searchChannels() async {
-    if (search.isEmpty) return;
-    setState(() => loading = true);
-    final resp = await http.post(
-      Uri.parse('$apiUrl/channels/search'),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-        'Content-Type': 'application/json'
-      },
-      body: jsonEncode({'query': search}),
-    );
-    final json = jsonDecode(resp.body);
-    if (json['success'] == true) {
+  void _searchChannels() {
+    if (search.isEmpty) {
       setState(() {
-        channels = json['channels'] ?? [];
+        channels = [];
         loading = false;
       });
-    } else {
-      setState(() {
-        error = json['error'] ?? AppLocalizations.of(context)!.error;
-        loading = false;
-      });
+      return;
     }
+
+    setState(() => loading = true);
+    
+    // Отменяем предыдущий таймер
+    _searchTimer?.cancel();
+    
+    // Запускаем новый таймер для задержки поиска (дебаунс)
+    _searchTimer = Timer(const Duration(milliseconds: 500), () async {
+      final resp = await http.post(
+        Uri.parse('$apiUrl/channels/search'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'query': search}),
+      );
+      final json = jsonDecode(resp.body);
+      if (json['success'] == true) {
+        setState(() {
+          channels = json['channels'] ?? [];
+          loading = false;
+        });
+      } else {
+        setState(() {
+          error = json['error'] ?? AppLocalizations.of(context)!.error;
+          loading = false;
+        });
+      }
+    });
   }
 
   Future<void> _joinChannel(String channelName) async {
@@ -1062,9 +1081,14 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
           child: Row(children: [
             Expanded(
               child: TextField(
-                decoration: InputDecoration(labelText: loc.search),
-                onChanged: (v) => search = v,
-                onSubmitted: (_) => _searchChannels(),
+                decoration: InputDecoration(
+                  labelText: loc.search,
+                  hintText: 'Type to search channels...',
+                ),
+                onChanged: (v) {
+                  setState(() => search = v);
+                  _searchChannels();
+                },
               ),
             ),
             IconButton(
@@ -1082,7 +1106,19 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
           child: loading
               ? Center(child: Text(loc.loading))
               : channels.isEmpty
-                  ? Center(child: Text(loc.noChannelsAvailable))
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
+                          Text(
+                            search.isEmpty ? 'Enter channel name to search' : 'No channels found',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
                   : ListView.builder(
                       itemCount: channels.length,
                       itemBuilder: (_, i) => ListTile(
@@ -1117,8 +1153,9 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isRecording = false;
   String? _audioPath;
   WebSocketChannel? _wsChannel;
-  final Map<String, String> _channelAvatarCache = {};
   final AudioPlayer _audioPlayer = AudioPlayer();
+  Timer? _recordingTimer;
+  int _recordingDuration = 0;
 
   @override
   void initState() {
@@ -1137,9 +1174,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (json['success'] == true) {
       final members = List<String>.from(json['members'] ?? []);
       for (final member in members) {
-        if (!_avatarCache.containsKey(member)) {
-          _loadUserAvatar(member);
-        }
+        _loadUserAvatar(member);
       }
     }
   }
@@ -1150,7 +1185,9 @@ class _ChatScreenState extends State<ChatScreen> {
       final avatarUrl = '$apiUrl/user/$username/avatar?${DateTime.now().millisecondsSinceEpoch}';
       final response = await http.get(Uri.parse(avatarUrl));
       if (response.statusCode == 200) {
-        _avatarCache[username] = avatarUrl;
+        setState(() {
+          _avatarCache[username] = avatarUrl;
+        });
       }
     } catch (e) {
       print('Failed to load avatar for $username: $e');
@@ -1169,7 +1206,7 @@ class _ChatScreenState extends State<ChatScreen> {
               data['action'] == 'new' &&
               data['channel'] == widget.channel) {
             final username = data['from'];
-            if (username != null && !_avatarCache.containsKey(username)) {
+            if (username != null) {
               _loadUserAvatar(username);
             }
             setState(() {
@@ -1196,6 +1233,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _record.dispose();
     _audioPlayer.dispose();
     _wsChannel?.sink.close();
+    _recordingTimer?.cancel();
     super.dispose();
   }
 
@@ -1209,7 +1247,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final loadedMessages = json['messages'] ?? [];
       for (final msg in loadedMessages) {
         final username = msg['from'];
-        if (username != null && !_avatarCache.containsKey(username)) {
+        if (username != null) {
           _loadUserAvatar(username);
         }
       }
@@ -1253,11 +1291,14 @@ class _ChatScreenState extends State<ChatScreen> {
     final res = await FilePicker.platform.pickFiles(type: FileType.any);
     if (res == null || res.files.isEmpty) return;
     final pf = res.files.single;
-    final mimeType = lookupMimeType(pf.name) ?? '';
-    final isMedia = mimeType.startsWith('image/') || mimeType.startsWith('video/');
-    final saveDir = await getDumbFolder(media: isMedia);
+    
+    final externalDir = await getExternalStorageDirectory();
+    final dumbDir = Directory('${externalDir?.path}/Documents/DUMB');
+    if (!dumbDir.existsSync()) dumbDir.createSync(recursive: true);
+    
     final sourceFile = File(pf.path!);
-    final savedFile = await sourceFile.copy('$saveDir/${pf.name}');
+    final savedFile = await sourceFile.copy('${dumbDir.path}/${pf.name}');
+    
     var req = http.MultipartRequest('POST', Uri.parse('$apiUrl/upload/file'));
     req.headers['Authorization'] = 'Bearer ${widget.token}';
     req.files.add(await http.MultipartFile.fromPath('file', savedFile.path));
@@ -1275,7 +1316,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> _startRecording() async {
+  void _startRecording() async {
     try {
       if (await _record.hasPermission()) {
         final tempDir = await getTemporaryDirectory();
@@ -1290,7 +1331,15 @@ class _ChatScreenState extends State<ChatScreen> {
         );
         setState(() {
           _isRecording = true;
+          _recordingDuration = 0;
           error = '';
+        });
+        
+        // Запускаем таймер для отсчета времени записи
+        _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          setState(() {
+            _recordingDuration = timer.tick;
+          });
         });
       } else {
         setState(() => error = 'No audio recording permission');
@@ -1303,6 +1352,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _stopRecordingAndSend() async {
     try {
+      _recordingTimer?.cancel();
+      _recordingTimer = null;
+      
       if (!_isRecording) return;
       final path = await _record.stop();
       setState(() => _isRecording = false);
@@ -1320,13 +1372,14 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() => error = 'Recording is empty');
         return;
       }
-      final cacheDir = await getApplicationDocumentsDirectory();
-      final cachedPath = '${cacheDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.ogg';
-      final cachedFile = await file.copy(cachedPath);
-      _voiceCache[cachedPath] = cachedFile;
+      
+      final tempDir = await getTemporaryDirectory();
+      final tempPath = '${tempDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.ogg';
+      final tempFile = await file.copy(tempPath);
+      
       var req = http.MultipartRequest('POST', Uri.parse('$apiUrl/upload/file'));
       req.headers['Authorization'] = 'Bearer ${widget.token}';
-      req.files.add(await http.MultipartFile.fromPath('file', cachedPath));
+      req.files.add(await http.MultipartFile.fromPath('file', tempPath));
       var resp = await req.send();
       var json = jsonDecode(await resp.stream.bytesToString());
       if (json['success'] == true) {
@@ -1347,27 +1400,24 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _playVoiceMessage(String filename) async {
     try {
-      // Проверяем, есть ли файл в кэше
-      final cachedPath = _voiceCache.keys.firstWhere(
-        (key) => key.contains(filename) || key.endsWith('/$filename'),
-        orElse: () => '',
-      );
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final voiceCacheDir = Directory('${appDocDir.path}/voice_cache');
+      if (!voiceCacheDir.existsSync()) voiceCacheDir.createSync(recursive: true);
       
-      if (cachedPath.isNotEmpty && await File(cachedPath).exists()) {
+      final cachedPath = '${voiceCacheDir.path}/$filename';
+      
+      if (await File(cachedPath).exists()) {
         await _audioPlayer.setFilePath(cachedPath);
         await _audioPlayer.play();
         return;
       }
 
-      // Если нет в кэше, скачиваем и кэшируем
       final response = await http.get(
         Uri.parse('$apiUrl/download/$filename'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
       if (response.statusCode == 200) {
-        final cacheDir = await getApplicationDocumentsDirectory();
-        final cachedPath = '${cacheDir.path}/voice_$filename';
         await File(cachedPath).writeAsBytes(response.bodyBytes);
         _voiceCache[cachedPath] = File(cachedPath);
         
@@ -1382,13 +1432,38 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _downloadFile(String filename, String originalName) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$apiUrl/download/$filename'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+      
+      if (response.statusCode == 200) {
+        final externalDir = await getExternalStorageDirectory();
+        final dumbDir = Directory('${externalDir?.path}/Documents/DUMB');
+        if (!dumbDir.existsSync()) dumbDir.createSync(recursive: true);
+        
+        final filePath = '${dumbDir.path}/$originalName';
+        await File(filePath).writeAsBytes(response.bodyBytes);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('File saved to: $filePath')),
+        );
+      } else {
+        setState(() => error = 'File download failed');
+      }
+    } catch (e) {
+      setState(() => error = 'File download error: $e');
+    }
+  }
+
   Widget _buildFileMessage(Map<String, dynamic> file) {
     final filename = file['filename'] ?? '';
     final originalName = file['originalName'] ?? '';
     final mimeType = file['mimetype'] ?? '';
-    final downloadUrl = file['downloadUrl'] ?? '';
+    final size = file['size'] ?? 0;
 
-    // Проверяем, является ли файл голосовым сообщением
     final isVoiceMessage = filename.toLowerCase().endsWith('.ogg') || 
                           originalName.toLowerCase().endsWith('.ogg') ||
                           mimeType.contains('audio/ogg');
@@ -1397,64 +1472,63 @@ class _ChatScreenState extends State<ChatScreen> {
       return GestureDetector(
         onTap: () => _playVoiceMessage(filename),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.blue.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.play_arrow, color: Colors.blue, size: 24),
-              const SizedBox(width: 8),
-              const Text('Voice message', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              Text('${(file['size'] ?? 0) ~/ 1024} KB'),
+              Row(
+                children: [
+                  const Icon(Icons.play_arrow, color: Colors.blue, size: 28),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Voice Message',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${(size / 1024).toStringAsFixed(1)} KB',
+                style: const TextStyle(color: Colors.grey, fontSize: 14),
+              ),
             ],
           ),
         ),
       );
     }
 
-    // Для обычных файлов
     return GestureDetector(
-      onTap: () async {
-        try {
-          final response = await http.get(
-            Uri.parse('$apiUrl/download/$filename'),
-            headers: {'Authorization': 'Bearer ${widget.token}'},
-          );
-          
-          if (response.statusCode == 200) {
-            final dir = await getApplicationDocumentsDirectory();
-            final filePath = '${dir.path}/$originalName';
-            await File(filePath).writeAsBytes(response.bodyBytes);
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('File saved to: $filePath')),
-            );
-          }
-        } catch (e) {
-          setState(() => error = 'File download error: $e');
-        }
-      },
+      onTap: () => _downloadFile(filename, originalName),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.grey.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.insert_drive_file, size: 24),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text(originalName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('${(file['size'] ?? 0) ~/ 1024} KB'),
+                const Icon(Icons.insert_drive_file, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    originalName,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${(size / 1024).toStringAsFixed(1)} KB',
+              style: const TextStyle(color: Colors.grey, fontSize: 14),
             ),
           ],
         ),
@@ -1507,7 +1581,10 @@ class _ChatScreenState extends State<ChatScreen> {
                               if (msg['text'] != null && msg['text'].isNotEmpty)
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 8),
-                                  child: Text(msg['text']),
+                                  child: Text(
+                                    msg['text'],
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
                                 ),
                               if (file != null) _buildFileMessage(file),
                             ],
@@ -1519,24 +1596,52 @@ class _ChatScreenState extends State<ChatScreen> {
         Container(
           padding: const EdgeInsets.all(8.0),
           child: Row(children: [
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: loc.typeMessage,
-                  border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            // Кнопка записи слева
+            GestureDetector(
+              onLongPressStart: (_) => _startRecording(),
+              onLongPressEnd: (_) => _stopRecordingAndSend(),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _isRecording ? Colors.red : Colors.blue,
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                onChanged: (v) => text = v,
-                onSubmitted: (_) => _sendMessage(),
+                child: _isRecording
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.stop, color: Colors.white, size: 24),
+                          Text(
+                            '$_recordingDuration',
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ],
+                      )
+                    : const Icon(Icons.mic, color: Colors.white, size: 24),
               ),
             ),
             const SizedBox(width: 8),
-            IconButton(
-              icon: Icon(_isRecording ? Icons.stop : Icons.mic),
-              onPressed: _isRecording ? _stopRecordingAndSend : _startRecording,
-              tooltip: _isRecording ? loc.stopRecording : loc.startRecording,
+            // Увеличенное поле ввода сообщения
+            Expanded(
+              child: Container(
+                constraints: const BoxConstraints(
+                  minHeight: 50,
+                  maxHeight: 120,
+                ),
+                child: TextField(
+                  decoration: InputDecoration(
+                    labelText: loc.typeMessage,
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  maxLines: null,
+                  expands: false,
+                  onChanged: (v) => text = v,
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
             IconButton(
               icon: const Icon(Icons.attach_file),
               onPressed: _sendFile,
@@ -1553,16 +1658,4 @@ class _ChatScreenState extends State<ChatScreen> {
       ]),
     );
   }
-}
-
-Future<String> getDumbFolder({bool media = false}) async {
-  final dir = await getApplicationDocumentsDirectory();
-  final dumbDir = Directory('${dir.path}/dumb');
-  if (!dumbDir.existsSync()) dumbDir.createSync(recursive: true);
-  if (media) {
-    final mediaDir = Directory('${dumbDir.path}/media');
-    if (!mediaDir.existsSync()) mediaDir.createSync(recursive: true);
-    return mediaDir.path;
-  }
-  return dumbDir.path;
 }
