@@ -35,15 +35,45 @@ android {
         }
     }
 
-    buildTypes {
-        release {
-            buildConfigField("boolean", "ENABLE_DYNAMIC_DELIVERY", "false")
+    signingConfigs {
+        create("release") {
+            storeFile = file("./key.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
         }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-DEBUG"
+        }
+
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
+            buildConfigField("boolean", "ENABLE_DYNAMIC_DELIVERY", "false")
+            
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
+        }
+    }
+
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
     }
 }
 
 dependencies {
     implementation("com.google.android.play:core:1.10.3")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
 
 flutter {

@@ -5,8 +5,36 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_af.dart';
+import 'app_localizations_ar.dart';
+import 'app_localizations_ca.dart';
+import 'app_localizations_cs.dart';
+import 'app_localizations_da.dart';
+import 'app_localizations_de.dart';
+import 'app_localizations_el.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
+import 'app_localizations_fi.dart';
+import 'app_localizations_fr.dart';
+import 'app_localizations_he.dart';
+import 'app_localizations_hu.dart';
+import 'app_localizations_it.dart';
+import 'app_localizations_ja.dart';
+import 'app_localizations_ko.dart';
+import 'app_localizations_lol.dart';
+import 'app_localizations_mis.dart';
+import 'app_localizations_nl.dart';
+import 'app_localizations_no.dart';
+import 'app_localizations_pl.dart';
+import 'app_localizations_pt.dart';
+import 'app_localizations_ro.dart';
 import 'app_localizations_ru.dart';
+import 'app_localizations_sr.dart';
+import 'app_localizations_sv.dart';
+import 'app_localizations_tr.dart';
+import 'app_localizations_uk.dart';
+import 'app_localizations_vi.dart';
+import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
 
@@ -94,297 +122,49 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('af'),
+    Locale('ar'),
+    Locale('ca'),
+    Locale('cs'),
+    Locale('da'),
+    Locale('de'),
+    Locale('el'),
     Locale('en'),
-    Locale('ru')
+    Locale('es'),
+    Locale('fi'),
+    Locale('fr'),
+    Locale('he'),
+    Locale('hu'),
+    Locale('it'),
+    Locale('ja'),
+    Locale('ko'),
+    Locale('lol'),
+    Locale('mis'),
+    Locale('nl'),
+    Locale('no'),
+    Locale('pl'),
+    Locale('pt'),
+    Locale('ro'),
+    Locale('ru'),
+    Locale('sr'),
+    Locale('sv'),
+    Locale('tr'),
+    Locale('uk'),
+    Locale('vi'),
+    Locale('zh')
   ];
 
-  /// No description provided for @appTitle.
+  /// No description provided for @invalidInput.
   ///
   /// In en, this message translates to:
-  /// **'DUMB Android'**
-  String get appTitle;
+  /// **'Invalid input'**
+  String get invalidInput;
 
-  /// No description provided for @login.
+  /// No description provided for @serverSaved.
   ///
   /// In en, this message translates to:
-  /// **'Login'**
-  String get login;
-
-  /// No description provided for @register.
-  ///
-  /// In en, this message translates to:
-  /// **'Register'**
-  String get register;
-
-  /// No description provided for @username.
-  ///
-  /// In en, this message translates to:
-  /// **'Username'**
-  String get username;
-
-  /// No description provided for @password.
-  ///
-  /// In en, this message translates to:
-  /// **'Password'**
-  String get password;
-
-  /// No description provided for @channels.
-  ///
-  /// In en, this message translates to:
-  /// **'Channels'**
-  String get channels;
-
-  /// No description provided for @createChannel.
-  ///
-  /// In en, this message translates to:
-  /// **'Create Channel'**
-  String get createChannel;
-
-  /// No description provided for @joinChannel.
-  ///
-  /// In en, this message translates to:
-  /// **'Join Channel'**
-  String get joinChannel;
-
-  /// No description provided for @channelName.
-  ///
-  /// In en, this message translates to:
-  /// **'Channel Name'**
-  String get channelName;
-
-  /// No description provided for @sendMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Send Message'**
-  String get sendMessage;
-
-  /// No description provided for @typeMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Type a message...'**
-  String get typeMessage;
-
-  /// No description provided for @noMessages.
-  ///
-  /// In en, this message translates to:
-  /// **'No messages'**
-  String get noMessages;
-
-  /// No description provided for @beFirstToMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Be the first to message in this channel!'**
-  String get beFirstToMessage;
-
-  /// No description provided for @members.
-  ///
-  /// In en, this message translates to:
-  /// **'members'**
-  String get members;
-
-  /// No description provided for @createdBy.
-  ///
-  /// In en, this message translates to:
-  /// **'Created by'**
-  String get createdBy;
-
-  /// No description provided for @leaveChannel.
-  ///
-  /// In en, this message translates to:
-  /// **'Leave Channel'**
-  String get leaveChannel;
-
-  /// No description provided for @refresh.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh'**
-  String get refresh;
-
-  /// No description provided for @serverSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Server Settings'**
-  String get serverSettings;
-
-  /// No description provided for @logout.
-  ///
-  /// In en, this message translates to:
-  /// **'Logout'**
-  String get logout;
-
-  /// No description provided for @noChannelsAvailable.
-  ///
-  /// In en, this message translates to:
-  /// **'No channels available'**
-  String get noChannelsAvailable;
-
-  /// No description provided for @connectionError.
-  ///
-  /// In en, this message translates to:
-  /// **'Connection Error'**
-  String get connectionError;
-
-  /// No description provided for @retry.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get retry;
-
-  /// No description provided for @serverIp.
-  ///
-  /// In en, this message translates to:
-  /// **'Server IP Address'**
-  String get serverIp;
-
-  /// No description provided for @serverPort.
-  ///
-  /// In en, this message translates to:
-  /// **'Server Port'**
-  String get serverPort;
-
-  /// No description provided for @saveSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Save Settings'**
-  String get saveSettings;
-
-  /// No description provided for @testConnection.
-  ///
-  /// In en, this message translates to:
-  /// **'Test Connection'**
-  String get testConnection;
-
-  /// No description provided for @currentSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Current Settings'**
-  String get currentSettings;
-
-  /// No description provided for @quickSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Quick Settings'**
-  String get quickSettings;
-
-  /// No description provided for @hints.
-  ///
-  /// In en, this message translates to:
-  /// **'Hints'**
-  String get hints;
-
-  /// No description provided for @androidEmulator.
-  ///
-  /// In en, this message translates to:
-  /// **'Android Emulator'**
-  String get androidEmulator;
-
-  /// No description provided for @localhost.
-  ///
-  /// In en, this message translates to:
-  /// **'Localhost'**
-  String get localhost;
-
-  /// No description provided for @localNetwork.
-  ///
-  /// In en, this message translates to:
-  /// **'Local Network'**
-  String get localNetwork;
-
-  /// No description provided for @loading.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading...'**
-  String get loading;
-
-  /// No description provided for @error.
-  ///
-  /// In en, this message translates to:
-  /// **'Error'**
-  String get error;
-
-  /// No description provided for @success.
-  ///
-  /// In en, this message translates to:
-  /// **'Success'**
-  String get success;
-
-  /// No description provided for @cancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get cancel;
-
-  /// No description provided for @confirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Confirm'**
-  String get confirm;
-
-  /// No description provided for @search.
-  ///
-  /// In en, this message translates to:
-  /// **'Search'**
-  String get search;
-
-  /// No description provided for @settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings'**
-  String get settings;
-
-  /// No description provided for @profile.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile'**
-  String get profile;
-
-  /// No description provided for @about.
-  ///
-  /// In en, this message translates to:
-  /// **'About'**
-  String get about;
-
-  /// No description provided for @version.
-  ///
-  /// In en, this message translates to:
-  /// **'Version'**
-  String get version;
-
-  /// No description provided for @create.
-  ///
-  /// In en, this message translates to:
-  /// **'Create'**
-  String get create;
-
-  /// No description provided for @join.
-  ///
-  /// In en, this message translates to:
-  /// **'Join'**
-  String get join;
-
-  /// No description provided for @language.
-  ///
-  /// In en, this message translates to:
-  /// **'Language'**
-  String get language;
-
-  /// No description provided for @selectServer.
-  ///
-  /// In en, this message translates to:
-  /// **'Select Server'**
-  String get selectServer;
-
-  /// No description provided for @serverUrl.
-  ///
-  /// In en, this message translates to:
-  /// **'Server URL'**
-  String get serverUrl;
-
-  /// No description provided for @connect.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect'**
-  String get connect;
+  /// **'Server saved'**
+  String get serverSaved;
 
   /// No description provided for @invalidUrl.
   ///
@@ -398,29 +178,23 @@ abstract class AppLocalizations {
   /// **'Server unreachable'**
   String get serverUnreachable;
 
-  /// No description provided for @twoFactorAuthentication.
+  /// No description provided for @connectionError.
   ///
   /// In en, this message translates to:
-  /// **'Two-Factor Authentication'**
-  String get twoFactorAuthentication;
+  /// **'Connection error'**
+  String get connectionError;
 
-  /// No description provided for @enable2FA.
+  /// No description provided for @settings.
   ///
   /// In en, this message translates to:
-  /// **'Enable 2FA'**
-  String get enable2FA;
+  /// **'Settings'**
+  String get settings;
 
-  /// No description provided for @disable2FA.
+  /// No description provided for @language.
   ///
   /// In en, this message translates to:
-  /// **'Disable 2FA'**
-  String get disable2FA;
-
-  /// No description provided for @enter2FACode.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter 2FA Code'**
-  String get enter2FACode;
+  /// **'Language'**
+  String get language;
 
   /// No description provided for @theme.
   ///
@@ -446,89 +220,143 @@ abstract class AppLocalizations {
   /// **'Dark'**
   String get dark;
 
-  /// No description provided for @voiceMessage.
+  /// No description provided for @close.
   ///
   /// In en, this message translates to:
-  /// **'Voice Message'**
-  String get voiceMessage;
+  /// **'Close'**
+  String get close;
 
-  /// No description provided for @video.
+  /// No description provided for @selectServer.
   ///
   /// In en, this message translates to:
-  /// **'Video'**
-  String get video;
+  /// **'Select Server'**
+  String get selectServer;
 
-  /// No description provided for @file.
+  /// No description provided for @serverName.
   ///
   /// In en, this message translates to:
-  /// **'File'**
-  String get file;
+  /// **'Server Name'**
+  String get serverName;
 
-  /// No description provided for @sendError.
+  /// No description provided for @serverUrl.
   ///
   /// In en, this message translates to:
-  /// **'Failed to send message'**
-  String get sendError;
+  /// **'Server URL'**
+  String get serverUrl;
 
-  /// No description provided for @fileUploadError.
+  /// No description provided for @saveServer.
   ///
   /// In en, this message translates to:
-  /// **'File upload failed'**
-  String get fileUploadError;
+  /// **'Save Server'**
+  String get saveServer;
 
-  /// No description provided for @recordingPermissionDenied.
+  /// No description provided for @loading.
   ///
   /// In en, this message translates to:
-  /// **'Microphone permission denied'**
-  String get recordingPermissionDenied;
+  /// **'Loading...'**
+  String get loading;
 
-  /// No description provided for @recordingStartError.
+  /// No description provided for @login.
   ///
   /// In en, this message translates to:
-  /// **'Failed to start recording'**
-  String get recordingStartError;
+  /// **'Login'**
+  String get login;
 
-  /// No description provided for @emptyRecording.
+  /// No description provided for @register.
   ///
   /// In en, this message translates to:
-  /// **'Recording is empty or too short'**
-  String get emptyRecording;
+  /// **'Register'**
+  String get register;
 
-  /// No description provided for @uploadError.
+  /// No description provided for @username.
   ///
   /// In en, this message translates to:
-  /// **'Upload error'**
-  String get uploadError;
+  /// **'Username'**
+  String get username;
 
-  /// No description provided for @playbackError.
+  /// No description provided for @password.
   ///
   /// In en, this message translates to:
-  /// **'Playback error'**
-  String get playbackError;
+  /// **'Password'**
+  String get password;
 
-  /// No description provided for @videoPlaybackNotImplemented.
+  /// No description provided for @error.
   ///
   /// In en, this message translates to:
-  /// **'Video playback will be implemented later'**
-  String get videoPlaybackNotImplemented;
+  /// **'Error'**
+  String get error;
 
-  /// No description provided for @fileSaved.
+  /// No description provided for @channels.
   ///
   /// In en, this message translates to:
-  /// **'File saved'**
-  String get fileSaved;
+  /// **'Channels'**
+  String get channels;
 
-  /// No description provided for @downloadError.
+  /// No description provided for @search.
   ///
   /// In en, this message translates to:
-  /// **'Download error'**
-  String get downloadError;
+  /// **'Search'**
+  String get search;
 
-  /// No description provided for @unknownError.
+  /// No description provided for @createChannel.
   ///
   /// In en, this message translates to:
-  /// **'Unknown error'**
-  String get unknownError;
+  /// **'Create Channel'**
+  String get createChannel;
+
+  /// No description provided for @channelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel Name'**
+  String get channelName;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// No description provided for @join.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get join;
+
+  /// No description provided for @message.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get message;
+
+  /// No description provided for @sendFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Send File'**
+  String get sendFile;
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// No description provided for @startRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Recording'**
+  String get startRecording;
+
+  /// No description provided for @stopRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Recording'**
+  String get stopRecording;
 }
 
 class _AppLocalizationsDelegate
@@ -541,8 +369,38 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'ru'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+        'af',
+        'ar',
+        'ca',
+        'cs',
+        'da',
+        'de',
+        'el',
+        'en',
+        'es',
+        'fi',
+        'fr',
+        'he',
+        'hu',
+        'it',
+        'ja',
+        'ko',
+        'lol',
+        'mis',
+        'nl',
+        'no',
+        'pl',
+        'pt',
+        'ro',
+        'ru',
+        'sr',
+        'sv',
+        'tr',
+        'uk',
+        'vi',
+        'zh'
+      ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -551,10 +409,66 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'af':
+      return AppLocalizationsAf();
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'ca':
+      return AppLocalizationsCa();
+    case 'cs':
+      return AppLocalizationsCs();
+    case 'da':
+      return AppLocalizationsDa();
+    case 'de':
+      return AppLocalizationsDe();
+    case 'el':
+      return AppLocalizationsEl();
     case 'en':
       return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
+    case 'fi':
+      return AppLocalizationsFi();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'he':
+      return AppLocalizationsHe();
+    case 'hu':
+      return AppLocalizationsHu();
+    case 'it':
+      return AppLocalizationsIt();
+    case 'ja':
+      return AppLocalizationsJa();
+    case 'ko':
+      return AppLocalizationsKo();
+    case 'lol':
+      return AppLocalizationsLol();
+    case 'mis':
+      return AppLocalizationsMis();
+    case 'nl':
+      return AppLocalizationsNl();
+    case 'no':
+      return AppLocalizationsNo();
+    case 'pl':
+      return AppLocalizationsPl();
+    case 'pt':
+      return AppLocalizationsPt();
+    case 'ro':
+      return AppLocalizationsRo();
     case 'ru':
       return AppLocalizationsRu();
+    case 'sr':
+      return AppLocalizationsSr();
+    case 'sv':
+      return AppLocalizationsSv();
+    case 'tr':
+      return AppLocalizationsTr();
+    case 'uk':
+      return AppLocalizationsUk();
+    case 'vi':
+      return AppLocalizationsVi();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(

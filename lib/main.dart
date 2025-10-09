@@ -13,10 +13,10 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:record/record.dart';
 import 'l10n/app_localizations.dart';
 
-// Глобальные переменные
 String apiUrl = 'http://localhost:3000/api';
 String? _cachedToken;
 final Map<String, String> _avatarCache = {};
+final Map<String, File> _voiceCache = {};
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,20 +47,12 @@ class _DumbAppState extends State<DumbApp> {
   void initState() {
     super.initState();
     _themeMode = widget.themeMode;
-    _loadServerUrl();
     _loadToken();
   }
 
   void _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     _cachedToken = prefs.getString('token');
-  }
-
-  void _loadServerUrl() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      apiUrl = prefs.getString('server_url') ?? 'http://localhost:3000/api';
-    });
   }
 
   void setLocale(Locale locale) {
@@ -78,7 +70,6 @@ class _DumbAppState extends State<DumbApp> {
     final prefs = await SharedPreferences.getInstance();
     setState(() => apiUrl = url);
     await prefs.setString('server_url', url);
-    // Сброс токена при смене сервера
     await prefs.remove('token');
     _cachedToken = null;
   }
@@ -116,7 +107,6 @@ class _DumbAppState extends State<DumbApp> {
   }
 }
 
-// Экран выбора сервера — показывается до авторизации
 class ServerSelectionScreen extends StatefulWidget {
   final void Function(Locale) setLocale;
   final void Function(ThemeMode) setTheme;
@@ -135,26 +125,72 @@ class ServerSelectionScreen extends StatefulWidget {
 }
 
 class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
+  List<Map<String, String>> savedServers = [];
+  late TextEditingController _nameController;
   late TextEditingController _urlController;
   bool _loading = false;
 
   @override
   void initState() {
     super.initState();
-    _urlController = TextEditingController(text: apiUrl);
+    _nameController = TextEditingController();
+    _urlController = TextEditingController();
+    _loadSavedServers();
   }
 
   @override
   void dispose() {
+    _nameController.dispose();
     _urlController.dispose();
     super.dispose();
   }
 
-  Future<void> _testAndSave() async {
-    final currentUrl = _urlController.text.trim();
-    final uri = Uri.tryParse(currentUrl);
+  Future<void> _loadSavedServers() async {
+    final prefs = await SharedPreferences.getInstance();
+    final serversJson = prefs.getStringList('saved_servers') ?? [];
+    setState(() {
+      savedServers = serversJson.map((server) => Map<String, String>.from(json.decode(server))).toList();
+    });
+  }
 
-    if (currentUrl.isEmpty || uri == null || !uri.hasAbsolutePath) {
+  Future<void> _saveServer() async {
+    final name = _nameController.text.trim();
+    final url = _urlController.text.trim();
+    
+    if (name.isEmpty || url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)?.invalidInput ?? 'Invalid input')),
+      );
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final newServer = {'name': name, 'url': url};
+    final serversJson = prefs.getStringList('saved_servers') ?? [];
+    serversJson.add(json.encode(newServer));
+    await prefs.setStringList('saved_servers', serversJson);
+    
+    _nameController.clear();
+    _urlController.clear();
+    await _loadSavedServers();
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)?.serverSaved ?? 'Server saved')),
+    );
+  }
+
+  Future<void> _deleteServer(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    final serversJson = prefs.getStringList('saved_servers') ?? [];
+    serversJson.removeAt(index);
+    await prefs.setStringList('saved_servers', serversJson);
+    await _loadSavedServers();
+  }
+
+  Future<void> _connectToServer(String url) async {
+    final uri = Uri.tryParse(url);
+
+    if (url.isEmpty || uri == null || !uri.hasAbsolutePath) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)?.invalidUrl ?? 'Invalid URL')),
       );
@@ -163,9 +199,9 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
 
     setState(() => _loading = true);
     try {
-      final resp = await http.get(Uri.parse('$currentUrl/ping'));
+      final resp = await http.get(Uri.parse('$url/ping'));
       if (resp.statusCode == 200) {
-        widget.setServerUrl(currentUrl);
+        widget.setServerUrl(url);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -191,39 +227,141 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
     }
   }
 
+  void _showSettings() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context)?.settings ?? 'Settings'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text(AppLocalizations.of(context)?.language ?? 'Language'),
+                trailing: DropdownButton<Locale>(
+                  value: Localizations.localeOf(context),
+                  onChanged: (Locale? newLocale) {
+                    if (newLocale != null) {
+                      widget.setLocale(newLocale);
+                      Navigator.pop(context);
+                    }
+                  },
+                  items: AppLocalizations.supportedLocales.map((Locale locale) {
+                    return DropdownMenuItem<Locale>(
+                      value: locale,
+                      child: Text(_getLanguageName(locale)),
+                    );
+                  }).toList(),
+                ),
+              ),
+              ListTile(
+                title: Text(AppLocalizations.of(context)?.theme ?? 'Theme'),
+                trailing: DropdownButton<ThemeMode>(
+                  value: widget.themeMode,
+                  onChanged: (ThemeMode? newTheme) {
+                    if (newTheme != null) {
+                      widget.setTheme(newTheme);
+                      Navigator.pop(context);
+                    }
+                  },
+                  items: [
+                    DropdownMenuItem(
+                      value: ThemeMode.system,
+                      child: Text(AppLocalizations.of(context)?.system ?? 'System'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.light,
+                      child: Text(AppLocalizations.of(context)?.light ?? 'Light'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text(AppLocalizations.of(context)?.dark ?? 'Dark'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppLocalizations.of(context)?.close ?? 'Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getLanguageName(Locale locale) {
+    switch (locale.languageCode) {
+      case 'en': return 'English';
+      case 'ru': return 'Русский';
+      default: return locale.languageCode;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(loc.selectServer)),
-      body: Center(
-        child: SizedBox(
-          width: 350,
-          child: Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _urlController,
-                    decoration: InputDecoration(labelText: loc.serverUrl),
-                    enabled: !_loading,
-                  ),
-                  const SizedBox(height: 20),
-                  if (_loading)
-                    const CircularProgressIndicator()
-                  else
-                    ElevatedButton(
-                      onPressed: _testAndSave,
-                      child: Text(loc.connect),
+      appBar: AppBar(
+        title: Text(loc.selectServer),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _showSettings,
+            tooltip: loc.settings,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(labelText: loc.serverName),
                     ),
-                ],
+                    TextField(
+                      controller: _urlController,
+                      decoration: InputDecoration(labelText: loc.serverUrl),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _saveServer,
+                      child: Text(loc.saveServer),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+          Expanded(
+            child: _loading
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: savedServers.length,
+                    itemBuilder: (context, index) {
+                      final server = savedServers[index];
+                      return ListTile(
+                        title: Text(server['name'] ?? ''),
+                        subtitle: Text(server['url'] ?? ''),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteServer(index),
+                        ),
+                        onTap: () => _connectToServer(server['url']!),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -282,10 +420,7 @@ class _AuthGateState extends State<AuthGate> {
           );
           return;
         }
-      } catch (e) {
-        // ignore
-      }
-      // Токен недействителен — удаляем
+      } catch (e) {}
       prefs.remove('token');
       _cachedToken = null;
     }
@@ -315,11 +450,6 @@ class _AuthGateState extends State<AuthGate> {
           });
   }
 }
-
-// ... остальные классы (AuthScreen, ChannelsScreen, ChatScreen и т.д.) остаются без изменений
-// за исключением удаления SettingsScreen из навигации
-
-// Ниже — оставшиеся классы без изменений (для полноты кода)
 
 class AuthScreen extends StatefulWidget {
   final void Function(String token) onLogin;
@@ -595,7 +725,6 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
             onPressed: _createChannel,
             tooltip: loc.createChannel,
           ),
-          // Настройки теперь недоступны здесь — они в ServerSelectionScreen
         ],
       ),
       body: loading
@@ -1058,240 +1187,62 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
       final fileSize = await file.length();
-      if (fileSize < 100) {
-        setState(() => error = 'Запись пустая или слишком короткая');
-        await file.delete();
+      if (fileSize == 0) {
+        setState(() => error = 'Запись пустая');
         return;
       }
-
-      final initResponse = await http.post(
-        Uri.parse('$apiUrl/voice/upload'),
-        headers: {
-          'Authorization': 'Bearer ${widget.token}',
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode({
-          'channel': widget.channel,
-          'duration': 0
-        }),
-      );
-      if (initResponse.statusCode != 200) {
-        setState(() => error = 'Ошибка инициализации: ${initResponse.statusCode}');
-        await file.delete();
-        return;
-      }
-      final initJson = jsonDecode(initResponse.body);
-      if (initJson['success'] != true) {
-        setState(() => error = initJson['error'] ?? 'Ошибка инициализации');
-        await file.delete();
-        return;
-      }
-      final voiceId = initJson['voiceId'];
-      final uploadUrl = initJson['uploadUrl'];
-      String fullUploadUrl;
-      if (uploadUrl.startsWith('/')) {
-        fullUploadUrl = apiUrl.replaceFirst('/api', '') + uploadUrl;
-      } else {
-        fullUploadUrl = '$apiUrl$uploadUrl';
-      }
-
-      try {
-        var request = http.MultipartRequest('POST', Uri.parse(fullUploadUrl));
-        request.headers['Authorization'] = 'Bearer ${widget.token}';
-        request.files.add(await http.MultipartFile.fromPath(
-          'voice',
-          path,
-          filename: voiceId,
-        ));
-        final uploadResponse = await request.send();
-        final responseBody = await uploadResponse.stream.bytesToString();
-        if (uploadResponse.statusCode != 200) {
-          setState(() => error = 'Ошибка загрузки файла: ${uploadResponse.statusCode}');
-          await file.delete();
-          return;
-        }
-        final uploadJson = jsonDecode(responseBody);
-        if (uploadJson['success'] != true) {
-          setState(() => error = uploadJson['error'] ?? 'Ошибка загрузки файла');
-          await file.delete();
-          return;
-        }
-        final sendResponse = await http.post(
-          Uri.parse('$apiUrl/message/voice-only'),
-          headers: {
-            'Authorization': 'Bearer ${widget.token}',
-            'Content-Type': 'application/json'
-          },
-          body: jsonEncode({
-            'channel': widget.channel,
-            'voiceMessage': voiceId
-          }),
+      final cacheDir = await getApplicationDocumentsDirectory();
+      final cachedPath = '${cacheDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.ogg';
+      final cachedFile = await file.copy(cachedPath);
+      _voiceCache[cachedPath] = cachedFile;
+      var req = http.MultipartRequest('POST', Uri.parse('$apiUrl/upload/file'));
+      req.headers['Authorization'] = 'Bearer ${widget.token}';
+      req.files.add(await http.MultipartFile.fromPath('file', cachedPath));
+      var resp = await req.send();
+      var json = jsonDecode(await resp.stream.bytesToString());
+      if (json['success'] == true) {
+        final fileId = json['file']['id'];
+        await http.post(
+          Uri.parse('$apiUrl/message'),
+          headers: {'Authorization': 'Bearer ${widget.token}', 'Content-Type': 'application/json'},
+          body: jsonEncode({'channel': widget.channel, 'fileId': fileId}),
         );
-        final sendJson = jsonDecode(sendResponse.body);
-        if (sendJson['success'] == true) {
-          setState(() => error = '');
-          _loadMessages();
-        } else {
-          setState(() => error = sendJson['error'] ?? 'Ошибка отправки сообщения');
-        }
-      } catch (uploadError) {
-        setState(() => error = 'Ошибка загрузки: $uploadError');
-      }
-      await file.delete();
-      _audioPath = null;
-    } catch (e) {
-      setState(() => error = 'Ошибка отправки голоса: $e');
-    }
-  }
-
-  Future<void> _playVoice(String url) async {
-    try {
-      final player = AudioPlayer();
-      String fullUrl;
-      if (url.startsWith('/')) {
-        fullUrl = apiUrl.replaceFirst('/api', '') + url;
-      } else if (url.startsWith('http')) {
-        fullUrl = url;
       } else {
-        fullUrl = apiUrl.replaceFirst('/api', '') + '/api/download/' + url;
+        setState(() => error = json['error'] ?? 'Voice upload error');
       }
-      await player.setUrl(fullUrl);
-      await player.play();
-      player.playerStateStream.listen((state) async {
-        if (state.processingState == ProcessingState.completed) {
-          await player.dispose();
-        }
-      });
-      Future.delayed(Duration(seconds: 30), () async {
-        if (player.playing) {
-          await player.stop();
-        }
-        await player.dispose();
-      });
     } catch (e) {
-      setState(() => error = 'Ошибка воспроизведения: $e');
+      print('Recording stop/send error: $e');
+      setState(() => error = 'Ошибка отправки записи: $e');
     }
   }
 
-  void _viewImage(String url, String filename) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Stack(
-          children: [
-            InteractiveViewer(
-              child: Image.network(apiUrl.replaceFirst('/api', '') + url),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: IconButton(
-                icon: Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageFile(Map file) {
-    final mime = file['mimetype'] ?? '';
-    final url = file['downloadUrl'];
-    final filename = file['originalName'] ?? 'file';
-    final isVoiceMessage = filename.endsWith('.ogg') ||
-        filename.endsWith('.opus') ||
-        filename.endsWith('.wav') ||
-        mime.contains('audio/ogg') ||
-        mime.contains('audio/opus') ||
-        mime.contains('audio/wav');
-
-    if (isVoiceMessage) {
-      return GestureDetector(
-        onTap: () => _playVoice(url),
-        child: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.play_arrow, color: Colors.blue),
-              SizedBox(width: 8),
-              Text('Голосовое сообщение'),
-            ],
-          ),
-        ),
-      );
-    }
-    if (mime.startsWith('image/')) {
-      return GestureDetector(
-        onTap: () => _viewImage(url, filename),
-        child: Image.network(apiUrl.replaceFirst('/api', '') + url, width: 200),
-      );
-    }
-    if (mime.startsWith('video/')) {
-      return GestureDetector(
-        onTap: () => _playVideo(url),
-        child: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.play_arrow, color: Colors.red),
-              SizedBox(width: 8),
-              Text('Видео: $filename'),
-            ],
-          ),
-        ),
-      );
-    }
-    return GestureDetector(
-      onTap: () => _downloadFile(url, filename),
-      child: Container(
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.insert_drive_file),
-            SizedBox(width: 8),
-            Text(filename),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _playVideo(String url) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Воспроизведение видео будет реализовано позже')),
-    );
-  }
-
-  Future<void> _downloadFile(String url, String filename) async {
+  Future<void> _playVoiceMessage(String fileId) async {
     try {
-      final response = await http.get(Uri.parse(apiUrl.replaceFirst('/api', '') + url));
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$filename');
-      await file.writeAsBytes(response.bodyBytes);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Файл сохранён: ${file.path}')),
+      final cachedPath = _voiceCache.keys.firstWhere((key) => key.contains(fileId), orElse: () => '');
+      if (cachedPath.isNotEmpty && await File(cachedPath).exists()) {
+        final player = AudioPlayer();
+        await player.setFilePath(cachedPath);
+        await player.play();
+        return;
+      }
+      final resp = await http.get(
+        Uri.parse('$apiUrl/file/$fileId'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
       );
+      if (resp.statusCode == 200) {
+        final cacheDir = await getApplicationDocumentsDirectory();
+        final cachedPath = '${cacheDir.path}/voice_$fileId.ogg';
+        await File(cachedPath).writeAsBytes(resp.bodyBytes);
+        _voiceCache[cachedPath] = File(cachedPath);
+        final player = AudioPlayer();
+        await player.setFilePath(cachedPath);
+        await player.play();
+      } else {
+        setState(() => error = 'Failed to download voice message');
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка загрузки: $e')),
-      );
+      print('Voice playback error: $e');
+      setState(() => error = 'Voice playback error: $e');
     }
   }
 
@@ -1314,44 +1265,23 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemCount: messages.length,
                   itemBuilder: (_, i) {
                     final msg = messages[i];
-                    final username = msg['from'];
-                    final avatarUrl = username != null ? _avatarCache[username] : null;
+                    final username = msg['from'] ?? '';
+                    final avatarUrl = _avatarCache[username];
+                    final fileId = msg['fileId'];
+                    final isVoice = fileId != null && msg['mimeType'] == 'audio/ogg';
                     return ListTile(
                       leading: avatarUrl != null
                           ? CircleAvatar(backgroundImage: NetworkImage(avatarUrl))
-                          : CircleAvatar(child: Text(username?.substring(0, 1) ?? '?')),
-                      title: Text(username ?? ''),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (msg['text'] != null && msg['text'].isNotEmpty)
-                            Text(msg['text']),
-                          if (msg['file'] != null) _buildMessageFile(msg['file']),
-                          if (msg['voice'] != null)
-                            GestureDetector(
-                              onTap: () => _playVoice(msg['voice']['downloadUrl']),
-                              child: Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.play_arrow, color: Colors.blue),
-                                    SizedBox(width: 8),
-                                    Text('Голосовое сообщение'),
-                                    if (msg['voice']['duration'] != null &&
-                                        msg['voice']['duration'] > 0)
-                                      Text(
-                                          ' (${(msg['voice']['duration'] / 1000).toStringAsFixed(1)}с)'),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+                          : const CircleAvatar(child: Icon(Icons.person)),
+                      title: Text(username),
+                      subtitle: isVoice
+                          ? Row(children: [
+                              Icon(Icons.play_arrow, color: Colors.blue),
+                              SizedBox(width: 8),
+                              Text('Voice message'),
+                            ])
+                          : Text(msg['text'] ?? ''),
+                      onTap: isVoice ? () => _playVoiceMessage(fileId) : null,
                     );
                   },
                 ),
@@ -1361,7 +1291,7 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Row(children: [
             Expanded(
               child: TextField(
-                decoration: InputDecoration(labelText: loc.typeMessage),
+                decoration: InputDecoration(labelText: loc.message),
                 onChanged: (v) => text = v,
                 onSubmitted: (_) => _sendMessage(),
               ),
@@ -1369,15 +1299,17 @@ class _ChatScreenState extends State<ChatScreen> {
             IconButton(
               icon: Icon(_isRecording ? Icons.stop : Icons.mic),
               onPressed: _isRecording ? _stopRecordingAndSend : _startRecording,
-              tooltip: _isRecording ? 'Остановить запись' : 'Записать голосовое сообщение',
+              tooltip: _isRecording ? loc.stopRecording : loc.startRecording,
             ),
             IconButton(
               icon: const Icon(Icons.attach_file),
               onPressed: _sendFile,
+              tooltip: loc.sendFile,
             ),
             IconButton(
               icon: sending ? const CircularProgressIndicator() : const Icon(Icons.send),
               onPressed: sending ? null : _sendMessage,
+              tooltip: loc.send,
             ),
           ]),
         ),
@@ -1388,7 +1320,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
 Future<String> getDumbFolder({bool media = false}) async {
   final dir = await getApplicationDocumentsDirectory();
-  final dumbDir = Directory('${dir.path}/Dumb/${media ? 'Media' : 'Files'}');
+  final dumbDir = Directory('${dir.path}/dumb');
   if (!dumbDir.existsSync()) dumbDir.createSync(recursive: true);
+  if (media) {
+    final mediaDir = Directory('${dumbDir.path}/media');
+    if (!mediaDir.existsSync()) mediaDir.createSync(recursive: true);
+    return mediaDir.path;
+  }
   return dumbDir.path;
 }

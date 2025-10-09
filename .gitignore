@@ -12,7 +12,8 @@ build
 /captures
 .externalNativeBuild
 .cxx
-local.properties
+android/local.properties
 build
-app/android/build
+android/app/build
 .dart_tools
+android/app/key.jks
