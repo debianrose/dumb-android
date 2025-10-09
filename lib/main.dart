@@ -89,7 +89,12 @@ class _DumbAppState extends State<DumbApp> {
         brightness: Brightness.dark,
       ),
       themeMode: _themeMode,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       supportedLocales: AppLocalizations.supportedLocales,
       locale: _locale,
       home: ServerSelectionScreen(
@@ -747,12 +752,12 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: _showProfileSettings,
-            tooltip: 'Profile Settings',
+            tooltip: loc.profile,
           ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
-            tooltip: 'Logout',
+            tooltip: loc.logout,
           ),
         ],
       ),
@@ -765,18 +770,20 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                   child: Text(error, style: const TextStyle(color: Colors.red)),
                 ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: channels.length,
-                  itemBuilder: (_, i) => ListTile(
-                    title: Text(channels[i]['name'] ?? ''),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChatScreen(token: widget.token, channel: channels[i]['name']),
+                child: channels.isEmpty
+                    ? Center(child: Text(loc.noChannelsAvailable))
+                    : ListView.builder(
+                        itemCount: channels.length,
+                        itemBuilder: (_, i) => ListTile(
+                          title: Text(channels[i]['name'] ?? ''),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChatScreen(token: widget.token, channel: channels[i]['name']),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
               ),
             ]),
     );
@@ -845,7 +852,7 @@ class _ProfileSettingsDialogState extends State<ProfileSettingsDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Profile Settings'),
+      title: Text(AppLocalizations.of(context)!.profile),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -865,7 +872,7 @@ class _ProfileSettingsDialogState extends State<ProfileSettingsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(AppLocalizations.of(context)!.close),
         ),
       ],
     );
@@ -1035,7 +1042,7 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
     if (json['success'] == true) {
       widget.onChannelJoined();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Joined $channelName')),
+        SnackBar(content: Text('${AppLocalizations.of(context)!.join} $channelName')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1074,16 +1081,18 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
         Expanded(
           child: loading
               ? Center(child: Text(loc.loading))
-              : ListView.builder(
-                  itemCount: channels.length,
-                  itemBuilder: (_, i) => ListTile(
-                    title: Text(channels[i]['name'] ?? ''),
-                    trailing: ElevatedButton(
-                      onPressed: () => _joinChannel(channels[i]['name']),
-                      child: Text(loc.join),
+              : channels.isEmpty
+                  ? Center(child: Text(loc.noChannelsAvailable))
+                  : ListView.builder(
+                      itemCount: channels.length,
+                      itemBuilder: (_, i) => ListTile(
+                        title: Text(channels[i]['name'] ?? ''),
+                        trailing: ElevatedButton(
+                          onPressed: () => _joinChannel(channels[i]['name']),
+                          child: Text(loc.join),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
         ),
       ]),
     );
@@ -1109,6 +1118,7 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _audioPath;
   WebSocketChannel? _wsChannel;
   final Map<String, String> _channelAvatarCache = {};
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -1184,6 +1194,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _record.dispose();
+    _audioPlayer.dispose();
     _wsChannel?.sink.close();
     super.dispose();
   }
@@ -1334,27 +1345,34 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> _playVoiceMessage(String fileId) async {
+  Future<void> _playVoiceMessage(String filename) async {
     try {
-      final cachedPath = _voiceCache.keys.firstWhere((key) => key.contains(fileId), orElse: () => '');
+      // Проверяем, есть ли файл в кэше
+      final cachedPath = _voiceCache.keys.firstWhere(
+        (key) => key.contains(filename) || key.endsWith('/$filename'),
+        orElse: () => '',
+      );
+      
       if (cachedPath.isNotEmpty && await File(cachedPath).exists()) {
-        final player = AudioPlayer();
-        await player.setFilePath(cachedPath);
-        await player.play();
+        await _audioPlayer.setFilePath(cachedPath);
+        await _audioPlayer.play();
         return;
       }
-      final resp = await http.get(
-        Uri.parse('$apiUrl/file/$fileId'),
+
+      // Если нет в кэше, скачиваем и кэшируем
+      final response = await http.get(
+        Uri.parse('$apiUrl/download/$filename'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
-      if (resp.statusCode == 200) {
+
+      if (response.statusCode == 200) {
         final cacheDir = await getApplicationDocumentsDirectory();
-        final cachedPath = '${cacheDir.path}/voice_$fileId.ogg';
-        await File(cachedPath).writeAsBytes(resp.bodyBytes);
+        final cachedPath = '${cacheDir.path}/voice_$filename';
+        await File(cachedPath).writeAsBytes(response.bodyBytes);
         _voiceCache[cachedPath] = File(cachedPath);
-        final player = AudioPlayer();
-        await player.setFilePath(cachedPath);
-        await player.play();
+        
+        await _audioPlayer.setFilePath(cachedPath);
+        await _audioPlayer.play();
       } else {
         setState(() => error = 'Failed to download voice message');
       }
@@ -1362,6 +1380,86 @@ class _ChatScreenState extends State<ChatScreen> {
       print('Voice playback error: $e');
       setState(() => error = 'Voice playback error: $e');
     }
+  }
+
+  Widget _buildFileMessage(Map<String, dynamic> file) {
+    final filename = file['filename'] ?? '';
+    final originalName = file['originalName'] ?? '';
+    final mimeType = file['mimetype'] ?? '';
+    final downloadUrl = file['downloadUrl'] ?? '';
+
+    // Проверяем, является ли файл голосовым сообщением
+    final isVoiceMessage = filename.toLowerCase().endsWith('.ogg') || 
+                          originalName.toLowerCase().endsWith('.ogg') ||
+                          mimeType.contains('audio/ogg');
+
+    if (isVoiceMessage) {
+      return GestureDetector(
+        onTap: () => _playVoiceMessage(filename),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.play_arrow, color: Colors.blue, size: 24),
+              const SizedBox(width: 8),
+              const Text('Voice message', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
+              Text('${(file['size'] ?? 0) ~/ 1024} KB'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Для обычных файлов
+    return GestureDetector(
+      onTap: () async {
+        try {
+          final response = await http.get(
+            Uri.parse('$apiUrl/download/$filename'),
+            headers: {'Authorization': 'Bearer ${widget.token}'},
+          );
+          
+          if (response.statusCode == 200) {
+            final dir = await getApplicationDocumentsDirectory();
+            final filePath = '${dir.path}/$originalName';
+            await File(filePath).writeAsBytes(response.bodyBytes);
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('File saved to: $filePath')),
+            );
+          }
+        } catch (e) {
+          setState(() => error = 'File download error: $e');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.insert_drive_file, size: 24),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(originalName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('${(file['size'] ?? 0) ~/ 1024} KB'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -1378,31 +1476,45 @@ class _ChatScreenState extends State<ChatScreen> {
         Expanded(
           child: loading
               ? Center(child: Text(loc.loading))
-              : ListView.builder(
-                  controller: scrollController,
-                  itemCount: messages.length,
-                  itemBuilder: (_, i) {
-                    final msg = messages[i];
-                    final username = msg['from'] ?? '';
-                    final avatarUrl = _avatarCache[username];
-                    final fileId = msg['fileId'];
-                    final isVoice = fileId != null && msg['mimeType'] == 'audio/ogg';
-                    return ListTile(
-                      leading: avatarUrl != null
-                          ? CircleAvatar(backgroundImage: NetworkImage(avatarUrl))
-                          : const CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(username),
-                      subtitle: isVoice
-                          ? Row(children: [
-                              const Icon(Icons.play_arrow, color: Colors.blue),
-                              const SizedBox(width: 8),
-                              const Text('Voice message'),
-                            ])
-                          : Text(msg['text'] ?? ''),
-                      onTap: isVoice ? () => _playVoiceMessage(fileId) : null,
-                    );
-                  },
-                ),
+              : messages.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(loc.noMessages, style: const TextStyle(fontSize: 18)),
+                          const SizedBox(height: 8),
+                          Text(loc.beFirstToMessage, style: const TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: scrollController,
+                      itemCount: messages.length,
+                      itemBuilder: (_, i) {
+                        final msg = messages[i];
+                        final username = msg['from'] ?? '';
+                        final avatarUrl = _avatarCache[username];
+                        final file = msg['file'];
+                        
+                        return ListTile(
+                          leading: avatarUrl != null
+                              ? CircleAvatar(backgroundImage: NetworkImage(avatarUrl))
+                              : const CircleAvatar(child: Icon(Icons.person)),
+                          title: Text(username),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (msg['text'] != null && msg['text'].isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Text(msg['text']),
+                                ),
+                              if (file != null) _buildFileMessage(file),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
         ),
         Container(
           padding: const EdgeInsets.all(8.0),
@@ -1410,7 +1522,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: TextField(
                 decoration: InputDecoration(
-                  labelText: loc.message,
+                  labelText: loc.typeMessage,
                   border: const OutlineInputBorder(),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
