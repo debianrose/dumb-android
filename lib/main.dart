@@ -69,11 +69,15 @@ class _DumbAppState extends State<DumbApp> {
 
   void setServerUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
+  
+    url = url.replaceAll(RegExp(r'/+$'), '');
+  
     setState(() => apiUrl = url);
     await prefs.setString('server_url', url);
     await prefs.remove('token');
     _cachedToken = null;
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +161,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
   Future<void> _saveServer() async {
     final name = _nameController.text.trim();
     final url = _urlController.text.trim();
+    url = url.replaceAll(RegExp(r'/+$'), '');
     
     if (name.isEmpty || url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
