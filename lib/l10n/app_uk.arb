@@ -42,12 +42,12 @@
   "profile": "Профіль",
   "about": "Про проєкт",
   "version": "Версія",
-  "create": "Create",
-  "join": "Join",
-  "language": "Language",
-  "invalidUrl": "Invalid URL",
-  "serverUnreachable": "Server unreachable",
-  "selectServer": "Select Server",
-  "serverUrl": "Server URL",
-  "connect": "Connect"
+  "create": "Створить",
+  "join": "Приєднуватися",
+  "language": "Мова",
+  "invalidUrl": "Невірний URL",
+  "serverUnreachable": "Сервер недоступне",
+  "selectServer": "Вибрати сервер",
+  "serverUrl": "URL сервера",
+  "connect": "Приєднатися"
 }

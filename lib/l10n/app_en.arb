@@ -49,19 +49,5 @@
   "serverUnreachable": "Server unreachable",
   "selectServer": "Select Server",
   "serverUrl": "Server URL",
-  "connect": "Connect",
-  "invalidInput": "Invalid input",
-  "serverSaved": "Server saved",
-  "serverName": "Server Name",
-  "saveServer": "Save Server",
-  "system": "System",
-  "light": "Light",
-  "dark": "Dark",
-  "close": "Close",
-  "theme": "Theme",
-  "sendFile": "Send File",
-  "send": "Send",
-  "startRecording": "Start Recording",
-  "stopRecording": "Stop Recording",
-  "message": "Message"
+  "connect": "Connect"
 }
