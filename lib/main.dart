@@ -1182,6 +1182,13 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
   }
 }
 
+final emojiMap = {
+  '<3': '❤️',
+  ':)': '🙂',
+  ':(': '🙁',
+  ':D': '😄',
+};
+
 class ChatScreen extends StatefulWidget {
   final String token, channel;
 
@@ -1206,6 +1213,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Timer? _messageUpdateTimer;
   Map<String, dynamic>? _replyingTo;
   final Map<String, bool> _playingVoiceMessages = {};
+  final _controller = TextEditingController();
 
   @override
   void initState() {
@@ -1221,6 +1229,25 @@ class _ChatScreenState extends State<ChatScreen> {
       if (_wsChannel == null || _wsChannel!.closeCode != null) {
         _connectWebSocket();
       }
+    });
+  }
+
+  void _onTextChanged(String value) {
+    String newText = value;
+    emojiMap.forEach((k, v) {
+      newText = newText.replaceAll(k, v);
+    });
+    
+    if (newText != value) {
+      final cursorPos = _controller.selection.baseOffset;
+      _controller.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: cursorPos),
+      );
+    }
+
+    setState(() {
+      text = newText; 
     });
   }
 
@@ -1834,8 +1861,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                           maxLines: null,
                           expands: false,
-                          controller: TextEditingController(text: text),
-                          onChanged: (v) => text = v,
+                          controller: _controller,
+                          onChanged: _onTextChanged,
                           onSubmitted: (_) => _sendMessage(),
                         ),
                       ),
