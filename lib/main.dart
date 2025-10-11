@@ -1510,10 +1510,10 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       if (await _audioRecorder.hasPermission()) {
         final tempDir = await getTemporaryDirectory();
-        final filePath = '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}.m4a';
+        final filePath = '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}.ogg';
         
         await _audioRecorder.start(
-          RecordConfig(encoder: AudioEncoder.aacLc),
+          RecordConfig(encoder: AudioEncoder.opus),
           path: filePath,
         );
         
