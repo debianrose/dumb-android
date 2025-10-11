@@ -18,7 +18,7 @@ import 'package:battery_plus/battery_plus.dart';
 import 'package:disk_space/disk_space.dart';
 
 String apiUrl = 'http://localhost:3000';
-String telemetryUrl = 'http://budget-lt.gl.at.ply.gg:31034';
+String telemetryUrl = 'http://81.90.29.191:7634';
 String? _cachedToken;
 final Map<String, String> _avatarCache = {};
 final Battery _battery = Battery();
