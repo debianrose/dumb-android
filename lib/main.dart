@@ -18,7 +18,7 @@ import 'package:battery_plus/battery_plus.dart';
 import 'package:disk_space/disk_space.dart';
 
 String apiUrl = 'http://localhost:3000';
-String telemetryUrl = 'http://81.90.29.191:7634';
+String telemetryUrl = 'http://dumb-analytics.akaruineko.space:7634';
 String? _cachedToken;
 final Map<String, String> _avatarCache = {};
 final Battery _battery = Battery();
