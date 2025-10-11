@@ -49,5 +49,14 @@
   "serverUnreachable": "Server unreachable",
   "selectServer": "Select Server",
   "serverUrl": "Server URL",
-  "connect": "Connect"
+  "connect": "Connect",
+  "invalidInput": "Invalid input",
+  "serverSaved": "Server saved successfully",
+  "theme": "Theme",
+  "system": "System",
+  "light": "Light", 
+  "dark": "Dark",
+  "close": "Close",
+  "serverName": "Server name",
+  "saveServer": "Save server"
 }

@@ -463,20 +463,14 @@ abstract class AppLocalizations {
   /// No description provided for @serverSaved.
   ///
   /// In en, this message translates to:
-  /// **'Server saved'**
+  /// **'Server saved successfully'**
   String get serverSaved;
 
-  /// No description provided for @serverName.
+  /// No description provided for @theme.
   ///
   /// In en, this message translates to:
-  /// **'Server Name'**
-  String get serverName;
-
-  /// No description provided for @saveServer.
-  ///
-  /// In en, this message translates to:
-  /// **'Save Server'**
-  String get saveServer;
+  /// **'Theme'**
+  String get theme;
 
   /// No description provided for @system.
   ///
@@ -502,41 +496,17 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
-  /// No description provided for @theme.
+  /// No description provided for @serverName.
   ///
   /// In en, this message translates to:
-  /// **'Theme'**
-  String get theme;
+  /// **'Server name'**
+  String get serverName;
 
-  /// No description provided for @sendFile.
+  /// No description provided for @saveServer.
   ///
   /// In en, this message translates to:
-  /// **'Send File'**
-  String get sendFile;
-
-  /// No description provided for @send.
-  ///
-  /// In en, this message translates to:
-  /// **'Send'**
-  String get send;
-
-  /// No description provided for @startRecording.
-  ///
-  /// In en, this message translates to:
-  /// **'Start Recording'**
-  String get startRecording;
-
-  /// No description provided for @stopRecording.
-  ///
-  /// In en, this message translates to:
-  /// **'Stop Recording'**
-  String get stopRecording;
-
-  /// No description provided for @message.
-  ///
-  /// In en, this message translates to:
-  /// **'Message'**
-  String get message;
+  /// **'Save server'**
+  String get saveServer;
 }
 
 class _AppLocalizationsDelegate

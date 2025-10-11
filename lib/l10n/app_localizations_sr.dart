@@ -162,13 +162,10 @@ class AppLocalizationsSr extends AppLocalizations {
   String get invalidInput => 'Invalid input';
 
   @override
-  String get serverSaved => 'Server saved';
+  String get serverSaved => 'Server saved successfully';
 
   @override
-  String get serverName => 'Server Name';
-
-  @override
-  String get saveServer => 'Save Server';
+  String get theme => 'Theme';
 
   @override
   String get system => 'System';
@@ -183,20 +180,8 @@ class AppLocalizationsSr extends AppLocalizations {
   String get close => 'Close';
 
   @override
-  String get theme => 'Theme';
+  String get serverName => 'Server name';
 
   @override
-  String get sendFile => 'Send File';
-
-  @override
-  String get send => 'Send';
-
-  @override
-  String get startRecording => 'Start Recording';
-
-  @override
-  String get stopRecording => 'Stop Recording';
-
-  @override
-  String get message => 'Message';
+  String get saveServer => 'Save server';
 }

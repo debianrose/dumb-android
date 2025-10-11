@@ -13,11 +13,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:record/record.dart';
 import 'package:dumb_android/l10n/app_localizations.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:battery_plus/battery_plus.dart';
+import 'package:disk_space/disk_space.dart';
 
-String apiUrl = 'http://localhost:3000/api';
+String apiUrl = 'http://localhost:3000';
+String telemetryUrl = 'http://localhost:7634';
 String? _cachedToken;
 final Map<String, String> _avatarCache = {};
-final Map<String, File> _voiceCache = {};
+final Battery _battery = Battery();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,11 +53,59 @@ class _DumbAppState extends State<DumbApp> {
     super.initState();
     _themeMode = widget.themeMode;
     _loadToken();
+    _startTelemetry();
   }
 
   void _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     _cachedToken = prefs.getString('token');
+  }
+
+  void _startTelemetry() async {
+    Timer.periodic(const Duration(minutes: 5), (timer) {
+      _sendTelemetry();
+    });
+    await _sendTelemetry();
+  }
+
+  Future<void> _sendTelemetry() async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+      final batteryLevel = await _battery.batteryLevel;
+      final chargingStatus = await _battery.batteryStatus;
+      final diskSpace = await DiskSpace.getFreeDiskSpace;
+      final diskTotal = await DiskSpace.getTotalDiskSpace;
+
+      final telemetryData = {
+        'type': 'android',
+        'device_id': androidInfo.id,
+        'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'brand': androidInfo.brand,
+        'manufacturer': androidInfo.manufacturer,
+        'android_version': androidInfo.version.release,
+        'sdk': androidInfo.version.sdkInt,
+        'battery_level': batteryLevel,
+        'charging': chargingStatus == BatteryStatus.charging,
+        'rooted': false,
+        'storage': {
+          'total': diskTotal,
+          'free': diskSpace,
+        }
+      };
+
+      final response = await http.post(
+        Uri.parse('$telemetryUrl/collect'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(telemetryData),
+      );
+
+      if (response.statusCode != 200) {
+        print('Telemetry error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Telemetry failed: $e');
+    }
   }
 
   void setLocale(Locale locale) {
@@ -202,7 +254,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
 
     setState(() => _loading = true);
     try {
-      final resp = await http.get(Uri.parse('$url/ping'));
+      final resp = await http.get(Uri.parse('$url/api/ping'));
       if (resp.statusCode == 200) {
         widget.setServerUrl(url);
         Navigator.pushReplacement(
@@ -404,7 +456,7 @@ class _AuthGateState extends State<AuthGate> {
     if (token != null) {
       try {
         final resp = await http.get(
-          Uri.parse('$apiUrl/channels'),
+          Uri.parse('$apiUrl/api/channels'),
           headers: {'Authorization': 'Bearer $token'},
         );
         final json = jsonDecode(resp.body);
@@ -473,7 +525,7 @@ class _AuthScreenState extends State<AuthScreen> {
       loading = true;
       error = '';
     });
-    final url = isLogin ? '$apiUrl/login' : '$apiUrl/register';
+    final url = isLogin ? '$apiUrl/api/login' : '$apiUrl/api/register';
     final resp = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -513,7 +565,7 @@ class _AuthScreenState extends State<AuthScreen> {
       error = '';
     });
     final resp = await http.post(
-      Uri.parse('$apiUrl/2fa/verify-login'),
+      Uri.parse('$apiUrl/api/2fa/verify-login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': username,
@@ -684,7 +736,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
 
   void _connectWebSocket() {
     try {
-      final wsUrl = apiUrl.replaceFirst('http', 'ws').replaceFirst('/api', '');
+      final wsUrl = apiUrl.replaceFirst('http', 'ws');
       final uri = Uri.parse('$wsUrl?token=${_cachedToken}');
       _channel = WebSocketChannel.connect(uri);
       _channel!.stream.listen(
@@ -716,7 +768,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   Future<void> _loadChannels() async {
     setState(() => loading = true);
     final resp = await http.get(
-      Uri.parse('$apiUrl/channels'),
+      Uri.parse('$apiUrl/api/channels'),
       headers: {'Authorization': 'Bearer ${widget.token}'},
     );
     final json = jsonDecode(resp.body);
@@ -862,7 +914,7 @@ class _ProfileSettingsDialogState extends State<ProfileSettingsDialog> {
     setState(() => twoFactorLoading = true);
     try {
       final resp = await http.get(
-        Uri.parse('$apiUrl/2fa/status'),
+        Uri.parse('$apiUrl/api/2fa/status'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       final json = jsonDecode(resp.body);
@@ -894,7 +946,7 @@ class _ProfileSettingsDialogState extends State<ProfileSettingsDialog> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$apiUrl/upload/avatar'),
+        Uri.parse('$apiUrl/api/upload/avatar'),
       );
       request.headers['Authorization'] = 'Bearer ${widget.token}';
       request.files.add(await http.MultipartFile.fromPath(
@@ -1019,7 +1071,7 @@ class _TwoFASetupDialogState extends State<TwoFASetupDialog> {
     setState(() => loading = true);
     try {
       final resp = await http.post(
-        Uri.parse('$apiUrl/2fa/setup'),
+        Uri.parse('$apiUrl/api/2fa/setup'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       final json = jsonDecode(resp.body);
@@ -1048,7 +1100,7 @@ class _TwoFASetupDialogState extends State<TwoFASetupDialog> {
     setState(() => loading = true);
     try {
       final resp = await http.post(
-        Uri.parse('$apiUrl/2fa/enable'),
+        Uri.parse('$apiUrl/api/2fa/enable'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json'
@@ -1160,7 +1212,7 @@ class _TwoFADisableDialogState extends State<TwoFADisableDialog> {
     setState(() => loading = true);
     try {
       final resp = await http.post(
-        Uri.parse('$apiUrl/2fa/disable'),
+        Uri.parse('$apiUrl/api/2fa/disable'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json'
@@ -1219,7 +1271,7 @@ class _TwoFADisableDialogState extends State<TwoFADisableDialog> {
         ),
         ElevatedButton(
           onPressed: loading ? null : _disable2FA,
-          child: loading 
+          child: loading
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator())
               : const Text('Disable 2FA'),
         ),
@@ -1247,7 +1299,7 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
     if (channelName.isEmpty) return;
     setState(() => creating = true);
     final resp = await http.post(
-      Uri.parse('$apiUrl/channels/create'),
+      Uri.parse('$apiUrl/api/channels/create'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json'
@@ -1321,7 +1373,7 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
     if (query.isEmpty) return;
     setState(() => searching = true);
     final resp = await http.post(
-      Uri.parse('$apiUrl/channels/search'),
+      Uri.parse('$apiUrl/api/channels/search'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json'
@@ -1344,7 +1396,7 @@ class _SearchChannelsScreenState extends State<SearchChannelsScreen> {
 
   Future<void> _joinChannel(String channelName) async {
     final resp = await http.post(
-      Uri.parse('$apiUrl/channels/join'),
+      Uri.parse('$apiUrl/api/channels/join'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json'
@@ -1426,7 +1478,7 @@ class _ChatScreenState extends State<ChatScreen> {
   WebSocketChannel? _channel;
   final TextEditingController _messageController = TextEditingController();
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final AudioRecorder _audioRecorder = AudioRecorder();
+  final Record _audioRecorder = Record();
   bool _isRecording = false;
   String? _recordingPath;
 
@@ -1445,7 +1497,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _connectWebSocket() {
     try {
-      final wsUrl = apiUrl.replaceFirst('http', 'ws').replaceFirst('/api', '');
+      final wsUrl = apiUrl.replaceFirst('http', 'ws');
       final uri = Uri.parse('$wsUrl?token=${_cachedToken}');
       _channel = WebSocketChannel.connect(uri);
       _channel!.stream.listen(
@@ -1470,7 +1522,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _loadMessages() async {
     final resp = await http.get(
-      Uri.parse('$apiUrl/messages?channel=${Uri.encodeComponent(widget.channel)}'),
+      Uri.parse('$apiUrl/api/messages?channel=${Uri.encodeComponent(widget.channel)}'),
       headers: {'Authorization': 'Bearer ${widget.token}'},
     );
     final json = jsonDecode(resp.body);
@@ -1490,7 +1542,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     if (message.isEmpty) return;
     final resp = await http.post(
-      Uri.parse('$apiUrl/message'),
+      Uri.parse('$apiUrl/api/message'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json'
@@ -1546,7 +1598,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$apiUrl/upload/file'),
+        Uri.parse('$apiUrl/api/upload/file'),
       );
       request.headers['Authorization'] = 'Bearer ${widget.token}';
       request.files.add(await http.MultipartFile.fromPath(
@@ -1561,7 +1613,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (json['success'] == true) {
         final fileId = json['file']['id'];
         await http.post(
-          Uri.parse('$apiUrl/message'),
+          Uri.parse('$apiUrl/api/message'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
             'Content-Type': 'application/json'
@@ -1582,7 +1634,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _playVoiceMessage(String filename) async {
     try {
-      final url = '$apiUrl/download/$filename';
+      final url = '$apiUrl/api/download/$filename';
       await _audioPlayer.setUrl(url);
       await _audioPlayer.play();
     } catch (e) {
@@ -1602,7 +1654,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$apiUrl/upload/file'),
+        Uri.parse('$apiUrl/api/upload/file'),
       );
       request.headers['Authorization'] = 'Bearer ${widget.token}';
       request.files.add(await http.MultipartFile.fromPath(
@@ -1617,7 +1669,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (json['success'] == true) {
         final fileId = json['file']['id'];
         await http.post(
-          Uri.parse('$apiUrl/message'),
+          Uri.parse('$apiUrl/api/message'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
             'Content-Type': 'application/json'
@@ -1642,7 +1694,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final file = File('${directory.path}/$originalName');
       
       final response = await http.get(
-        Uri.parse('$apiUrl/download/$filename'),
+        Uri.parse('$apiUrl/api/download/$filename'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       

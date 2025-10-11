@@ -136,40 +136,37 @@ class AppLocalizationsUk extends AppLocalizations {
   String get version => 'Версія';
 
   @override
-  String get create => 'Create';
+  String get create => 'Створить';
 
   @override
-  String get join => 'Join';
+  String get join => 'Приєднуватися';
 
   @override
-  String get language => 'Language';
+  String get language => 'Мова';
 
   @override
-  String get invalidUrl => 'Invalid URL';
+  String get invalidUrl => 'Невірний URL';
 
   @override
-  String get serverUnreachable => 'Server unreachable';
+  String get serverUnreachable => 'Сервер недоступне';
 
   @override
-  String get selectServer => 'Select Server';
+  String get selectServer => 'Вибрати сервер';
 
   @override
-  String get serverUrl => 'Server URL';
+  String get serverUrl => 'URL сервера';
 
   @override
-  String get connect => 'Connect';
+  String get connect => 'Приєднатися';
 
   @override
   String get invalidInput => 'Invalid input';
 
   @override
-  String get serverSaved => 'Server saved';
+  String get serverSaved => 'Server saved successfully';
 
   @override
-  String get serverName => 'Server Name';
-
-  @override
-  String get saveServer => 'Save Server';
+  String get theme => 'Theme';
 
   @override
   String get system => 'System';
@@ -184,20 +181,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get close => 'Close';
 
   @override
-  String get theme => 'Theme';
+  String get serverName => 'Server name';
 
   @override
-  String get sendFile => 'Send File';
-
-  @override
-  String get send => 'Send';
-
-  @override
-  String get startRecording => 'Start Recording';
-
-  @override
-  String get stopRecording => 'Stop Recording';
-
-  @override
-  String get message => 'Message';
+  String get saveServer => 'Save server';
 }
